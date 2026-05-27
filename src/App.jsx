@@ -3,14 +3,14 @@
 // Jack 3D Creator frontend + Navaneeth's real data + Admin CMS
 // ============================================================
 
-import { useEffect, useRef, useState, createContext, useContext, useCallback } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, createContext, useContext, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Github, Linkedin, Twitter, Mail, X, Lock, Save, LogOut,
   User, GraduationCap, Briefcase, Award, Code2, Layout,
   Terminal, Cpu, MessageSquare, Calendar, ChevronDown,
-  ArrowRight, ExternalLink, Star, GitFork, MapPin, Send,
-  Sparkles, BookOpen, Trophy, Code, Smartphone
+  ExternalLink, Star, GitFork, MapPin, Send,
+  Sparkles, BookOpen, Trophy, Code, Smartphone, Menu
 } from "lucide-react";
 
 // ============================================================
@@ -47,6 +47,141 @@ const GLOBAL_CSS = `
   img { max-width: 100%; display: block; }
   input, textarea, button { font-family: 'Kanit', sans-serif; }
   section { scroll-margin-top: 100px; }
+
+  /* Mobile Responsiveness Improvements */
+  .nav-desktop {
+    display: flex !important;
+  }
+  .nav-mobile-btn {
+    display: none !important;
+  }
+  .nav-desktop-btn {
+    display: inline-flex !important;
+  }
+  .nav-mobile-only {
+    display: none !important;
+  }
+  
+  .hero-tagline-container {
+    height: 28px;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+  .hero-tagline {
+    color: #22d3ee;
+    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    font-size: clamp(0.65rem, 1.1vw, 0.85rem);
+    text-align: center;
+    line-height: 1.4;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .project-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.5s ease;
+  }
+
+  .cert-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: clamp(16px, 2vw, 28px);
+  }
+
+  .admin-layout {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+  }
+  .admin-sidebar {
+    width: 200px;
+    background: rgba(255,255,255,0.02);
+    padding: 16px;
+    border-right: 1px solid rgba(255,255,255,0.04);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  @media (hover: hover) {
+    .project-image {
+      filter: blur(2px);
+      opacity: 0.5;
+    }
+    .project-image:hover {
+      filter: none;
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .nav-desktop {
+      display: none !important;
+    }
+    .nav-mobile-btn {
+      display: flex !important;
+    }
+    .nav-desktop-btn {
+      display: none !important;
+    }
+    .nav-mobile-only {
+      display: flex !important;
+    }
+    .admin-layout {
+      flex-direction: column;
+    }
+    .admin-sidebar {
+      width: 100%;
+      height: auto;
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      gap: 8px;
+      padding: 12px;
+      scrollbar-width: none;
+    }
+    .admin-sidebar::-webkit-scrollbar {
+      display: none;
+    }
+    .admin-sidebar button {
+      margin-bottom: 0 !important;
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero-tagline-container {
+      height: 48px !important;
+    }
+    .hero-tagline {
+      letter-spacing: 0.1em !important;
+      font-size: 11px !important;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+  }
+
+  @media (max-width: 550px) {
+    .cert-card {
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      gap: 16px !important;
+    }
+  }
 `;
 
 // ============================================================
@@ -143,7 +278,7 @@ function mergeWithIcons(saved, initial) {
   if (typeof saved === "object" && saved !== null && typeof initial === "object") {
     const result = { ...initial, ...saved };
     for (const key in result) {
-      if (result.hasOwnProperty(key) && initial.hasOwnProperty(key))
+      if (Object.prototype.hasOwnProperty.call(result, key) && Object.prototype.hasOwnProperty.call(initial, key))
         result[key] = mergeWithIcons(saved[key], initial[key]);
     }
     return result;
@@ -165,7 +300,9 @@ function AdminProvider({ children }) {
     try {
       const saved = lsGet("portfolioData");
       if (saved) return mergeWithIcons(JSON.parse(saved), initialData);
-    } catch {}
+    } catch (e) {
+      console.warn("Failed to load portfolioData", e);
+    }
     return initialData;
   });
 
@@ -365,8 +502,8 @@ function Navbar() {
           </button>
 
           {/* Center nav links — hidden on small screens */}
-          <div style={{
-            display: "flex", alignItems: "center",
+          <div className="nav-desktop" style={{
+            alignItems: "center",
             gap: "clamp(4px, 1.2vw, 20px)", flex: 1,
             justifyContent: "center", overflowX: "auto", scrollbarWidth: "none",
           }}>
@@ -418,8 +555,9 @@ function Navbar() {
             <a
               href={data.personalInfo.resumeLink || "#"}
               target="_blank" rel="noopener noreferrer"
+              className="nav-desktop-btn"
               style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
+                alignItems: "center", gap: 6,
                 background: "white", color: "#0C0C0C",
                 borderRadius: 9999, padding: "9px 20px",
                 fontFamily: "'Kanit', sans-serif", fontWeight: 700,
@@ -434,6 +572,24 @@ function Navbar() {
             >
               Resume
             </a>
+
+            {/* Hamburger Button */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="nav-mobile-btn"
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(215,226,234,0.15)",
+                borderRadius: 8, padding: "8px 10px", cursor: "pointer",
+                color: "rgba(215,226,234,0.6)",
+                alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)"; e.currentTarget.style.color = "white"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(215,226,234,0.15)"; e.currentTarget.style.color = "rgba(215,226,234,0.6)"; }}
+            >
+              {menuOpen ? <X size={13} /> : <Menu size={13} />}
+            </button>
           </div>
         </motion.div>
       </nav>
@@ -457,6 +613,26 @@ function Navbar() {
                 onMouseLeave={e => e.currentTarget.style.background = "none"}
               >{l.label}</button>
             ))}
+
+            {/* Resume button inside mobile menu drawer */}
+            <a
+              href={data.personalInfo.resumeLink || "#"}
+              target="_blank" rel="noopener noreferrer"
+              className="nav-mobile-only"
+              style={{
+                alignItems: "center", justifyContent: "center", gap: 6,
+                background: "white", color: "#0C0C0C",
+                borderRadius: 9999, padding: "12px 20px", marginTop: 12,
+                fontFamily: "'Kanit', sans-serif", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.1em",
+                fontSize: "0.9rem", textDecoration: "none",
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = S.purple; e.currentTarget.style.color = "white"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = "#0C0C0C"; }}
+            >
+              Resume
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -540,7 +716,7 @@ function PinModal() {
 // ============================================================
 // ADMIN PORTAL
 // ============================================================
-function AdminPortal({ onClose }) {
+function AdminPortal() {
   const { data, updateData, saveData, logout, saveMsg } = useAdmin();
   const [activeSection, setActiveSection] = useState("personal");
 
@@ -595,9 +771,9 @@ function AdminPortal({ onClose }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flex: 1, overflow: "hidden", flexDirection: "row" }}>
+        <div className="admin-layout">
           {/* Sidebar */}
-          <div style={{ width: 200, background: "rgba(255,255,255,0.02)", padding: 16, borderRight: "1px solid rgba(255,255,255,0.04)", overflowY: "auto", flexShrink: 0 }}>
+          <div className="admin-sidebar">
             {sections.map(s => {
               const Icon = s.icon;
               return (
@@ -725,16 +901,17 @@ function AdminPortal({ onClose }) {
 function HeroSection() {
   const { data } = useAdmin();
   const [taglineIdx, setTaglineIdx] = useState(0);
-  const taglines = [
-    data.personalInfo.tagline,
+  const tagline = data.personalInfo.tagline;
+  const taglines = useMemo(() => [
+    tagline,
     "Building modern AI-powered web applications",
     "Engineering AI-driven digital experiences",
     "Exploring intelligent full-stack systems",
-  ];
+  ], [tagline]);
   useEffect(() => {
     const t = setInterval(() => setTaglineIdx(i => (i + 1) % taglines.length), 3000);
     return () => clearInterval(t);
-  }, []);
+  }, [taglines]);
 
   return (
     <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", background: S.dark }}>
@@ -768,12 +945,12 @@ function HeroSection() {
 
         {/* Rotating tagline */}
         <FadeIn delay={0.35} y={20}>
-          <div style={{ height: 28, overflow: "hidden", marginBottom: 48 }}>
+          <div className="hero-tagline-container">
             <AnimatePresence mode="wait">
               <motion.p
                 key={taglineIdx}
                 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
-                style={{ color: S.cyan, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.25em", fontSize: "clamp(0.65rem,1.1vw,0.85rem)" }}
+                className="hero-tagline"
               >{taglines[taglineIdx]}</motion.p>
             </AnimatePresence>
           </div>
@@ -880,7 +1057,7 @@ function AboutSection() {
 
           {/* Stats */}
           <FadeIn delay={0.2} x={0} y={30}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div className="stats-grid">
               {stats.map((stat, i) => (
                 <motion.div key={stat.label}
                   initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }} viewport={{ once: true }}
@@ -969,10 +1146,7 @@ function ProjectsSection() {
                   style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%" }}
                 >
                   <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, aspectRatio: "16/9" }}>
-                    <img src={project.image} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "blur(2px)", opacity: 0.5, transition: "all 0.5s" }}
-                      onMouseEnter={e => { e.target.style.filter = "none"; e.target.style.opacity = "1"; }}
-                      onMouseLeave={e => { e.target.style.filter = "blur(2px)"; e.target.style.opacity = "0.5"; }}
-                    />
+                    <img src={project.image} alt={project.title} className="project-image" />
                     <div style={{ position: "absolute", bottom: 12, left: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {project.tech.map(t => (
                         <span key={t} style={{ padding: "4px 10px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 9999, fontSize: "0.68rem", color: "white", border: "1px solid rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t}</span>
@@ -1125,7 +1299,7 @@ function GitHubSection() {
               </div>
               {githubStats.map(stat => (
                 <div key={stat.label}>
-                  <div style={{ color: "white", fontWeight: 900, fontSize: "clamp(2rem,4vw,3rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1, color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontWeight: 900, fontSize: "clamp(2rem,4vw,3rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1, color: stat.color }}>{stat.value}</div>
                   <div style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>{stat.label}</div>
                 </div>
               ))}
@@ -1158,7 +1332,7 @@ function GitHubSection() {
               {/* Visual contribution grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(13, 1fr)", gap: 3, opacity: 0.35 }}>
                 {Array.from({ length: 52 }).map((_, i) => (
-                  <div key={i} style={{ aspectRatio: "1", borderRadius: 3, background: i % 3 === 0 ? S.cyan : i % 5 === 0 ? S.purple : "rgba(255,255,255,0.08)", opacity: Math.random() * 0.8 + 0.2 }} />
+                  <div key={i} style={{ aspectRatio: "1", borderRadius: 3, background: i % 3 === 0 ? S.cyan : i % 5 === 0 ? S.purple : "rgba(255,255,255,0.08)", opacity: (((i * 7) % 10) / 10) * 0.8 + 0.2 }} />
                 ))}
               </div>
             </GlassCard>
@@ -1231,7 +1405,8 @@ function CertificationsSection() {
               <motion.div
                 whileHover={{ y: -6, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
                 transition={{ duration: 0.3 }}
-                style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 28, padding: "clamp(20px,2vw,32px)", display: "flex", gap: "clamp(16px,2vw,28px)", alignItems: "center", overflow: "hidden" }}
+                className="cert-card"
+                style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 28, padding: "clamp(20px,2vw,32px)", overflow: "hidden" }}
               >
                 <div style={{ width: 90, height: 90, borderRadius: 18, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(0,0,0,0.06)" }}>
                   <img src={cert.image} alt={cert.title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
@@ -1378,7 +1553,7 @@ function AppContent() {
       <style>{GLOBAL_CSS}</style>
       <Navbar />
       <PinModal />
-      {isAdmin && <AdminPortal onClose={() => {}} />}
+      {isAdmin && <AdminPortal />}
       <HeroSection />
       <AboutSection />
       <EducationSection />
