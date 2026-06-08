@@ -10,7 +10,8 @@ import {
   User, GraduationCap, Briefcase, Award, Code2, Layout,
   Terminal, Cpu, MessageSquare, Calendar, ChevronDown,
   ExternalLink, Star, GitFork, MapPin, Send,
-  Sparkles, BookOpen, Trophy, Code, Smartphone, Menu
+  Sparkles, BookOpen, Trophy, Code, Smartphone, Menu,
+  Plus, Trash2, Palette
 } from "lucide-react";
 
 // ============================================================
@@ -38,7 +39,7 @@ const GLOBAL_CSS = `
     border: 1px solid rgba(255,255,255,0.08);
   }
   .text-gradient {
-    background: linear-gradient(90deg, #a855f7, #22d3ee);
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -68,7 +69,7 @@ const GLOBAL_CSS = `
     margin-bottom: 48px;
   }
   .hero-tagline {
-    color: #22d3ee;
+    color: var(--accent-secondary);
     font-family: monospace;
     text-transform: uppercase;
     letter-spacing: 0.25em;
@@ -249,6 +250,15 @@ const whatIBuild = [
   { title: "Automation Systems", description: "Smart scripts and background workers that streamline workflows and eliminate repetitive tasks.", icon: Smartphone, color: "#f59e0b" },
 ];
 
+const githubStats = {
+  username: "NavaneethRaj05",
+  contributions: "500+",
+  repos: "12",
+  prs: "24",
+  stars: "42",
+  forks: "18"
+};
+
 // ============================================================
 // ADMIN CONTEXT
 // ============================================================
@@ -260,7 +270,9 @@ function removeIcons(obj) {
   if (typeof obj === "object" && obj !== null) {
     const result = {};
     for (const key in obj) {
-      if (typeof obj[key] !== "function") result[key] = removeIcons(obj[key]);
+      if (key !== "icon" && typeof obj[key] !== "function") {
+        result[key] = removeIcons(obj[key]);
+      }
     }
     return result;
   }
@@ -270,16 +282,22 @@ function removeIcons(obj) {
 function mergeWithIcons(saved, initial) {
   if (Array.isArray(saved) && Array.isArray(initial)) {
     return saved.map((item, idx) => {
-      if (typeof item === "object" && item !== null && typeof initial[idx] === "object")
-        return { ...initial[idx], ...item };
+      if (typeof item === "object" && item !== null && typeof initial[idx] === "object") {
+        const cleanedItem = { ...item };
+        delete cleanedItem.icon;
+        return { ...initial[idx], ...cleanedItem };
+      }
       return item;
     });
   }
   if (typeof saved === "object" && saved !== null && typeof initial === "object") {
     const result = { ...initial, ...saved };
     for (const key in result) {
-      if (Object.prototype.hasOwnProperty.call(result, key) && Object.prototype.hasOwnProperty.call(initial, key))
+      if (key === "icon") {
+        result[key] = initial[key];
+      } else if (Object.prototype.hasOwnProperty.call(result, key) && Object.prototype.hasOwnProperty.call(initial, key)) {
         result[key] = mergeWithIcons(saved[key], initial[key]);
+      }
     }
     return result;
   }
@@ -290,7 +308,7 @@ function AdminProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
-  const initialData = { personalInfo, socialLinks, education, skills, projects, journey, certifications, whatIBuild };
+  const initialData = { personalInfo, socialLinks, education, skills, projects, journey, certifications, whatIBuild, githubStats };
 
   // Safe localStorage helpers — fall back silently in sandboxed envs
   const lsGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -336,8 +354,8 @@ function useAdmin() {
 const S = {
   dark: "#0C0C0C",
   text: "#D7E2EA",
-  purple: "#a855f7",
-  cyan: "#22d3ee",
+  purple: "var(--accent-primary)",
+  cyan: "var(--accent-secondary)",
 };
 
 function FadeIn({ children, delay = 0, duration = 0.7, x = 0, y = 30, style = {}, className = "" }) {
@@ -425,10 +443,8 @@ const NAV_LINKS = [
   { label: "Projects",      href: "projects" },
   { label: "Skills",        href: "skills" },
   { label: "Journey",       href: "journey" },
-  { label: "GitHub",        href: "github" },
   { label: "What I Build",  href: "what-i-build" },
   { label: "Certifications",href: "certifications" },
-  { label: "Contact",       href: "contact" },
 ];
 
 // Smooth-scroll helper that accounts for fixed navbar height
@@ -729,6 +745,7 @@ function AdminPortal() {
     { id: "journey", label: "Journey", icon: Layout },
     { id: "certifications", label: "Certifications", icon: Award },
     { id: "whatIBuild", label: "What I Build", icon: Code2 },
+    { id: "githubStats", label: "GitHub Stats", icon: Github },
   ];
 
   const inp = (val, onChange, type = "text", rows) => rows ? (
@@ -814,78 +831,331 @@ function AdminPortal() {
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Education</h3>
                 {data.education.map((edu, i) => card(
-                  <div>
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#aaa", fontWeight: 600 }}>Entry #{i + 1}</p>
+                      <button
+                        onClick={() => {
+                          const n = data.education.filter((_, idx) => idx !== i);
+                          updateData("education", n);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Education Entry"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     {field("Degree", edu.degree, v => { const n = [...data.education]; n[i] = { ...n[i], degree: v }; updateData("education", n); })}
                     {field("College", edu.college, v => { const n = [...data.education]; n[i] = { ...n[i], college: v }; updateData("education", n); })}
                     {field("Duration", edu.duration, v => { const n = [...data.education]; n[i] = { ...n[i], duration: v }; updateData("education", n); })}
+                    {field("Focus Areas (comma separated)", edu.focus ? edu.focus.join(", ") : "", v => { const n = [...data.education]; n[i] = { ...n[i], focus: v.split(",").map(s => s.trim()).filter(Boolean) }; updateData("education", n); })}
                   </div>, i
                 ))}
+                <button
+                  onClick={() => {
+                    const n = [...data.education, { degree: "New Degree", college: "New College", duration: "2026 – 2028", focus: [] }];
+                    updateData("education", n);
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"; e.currentTarget.style.borderColor = S.purple; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"; e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)"; }}
+                >
+                  <Plus size={16} /> Add Education Entry
+                </button>
               </div>
             )}
             {activeSection === "skills" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Skills</h3>
                 {Object.entries(data.skills).map(([cat, skillList]) => (
-                  <div key={cat} style={{ marginBottom: 24 }}>
-                    <p style={{ color: S.cyan, fontWeight: 600, marginBottom: 12, textTransform: "uppercase", fontSize: "0.8rem", letterSpacing: "0.08em" }}>{cat}</p>
+                  <div key={cat} style={{ marginBottom: 24, background: "#111", border: "1px solid #222", borderRadius: 16, padding: "16px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: S.cyan, fontWeight: 600, textTransform: "uppercase", fontSize: "0.8rem", letterSpacing: "0.08em" }}>{cat}</p>
+                      <button
+                        onClick={() => {
+                          const nd = { ...data.skills };
+                          delete nd[cat];
+                          updateData("skills", nd);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: 4 }}
+                        title="Delete Category"
+                      >
+                        <Trash2 size={14} /> Delete Category
+                      </button>
+                    </div>
                     {skillList.map((sk, i) =>
-                      <div key={i} style={{ marginBottom: 8 }}>
-                        {inp(sk.name, v => { const nd = { ...data.skills }; nd[cat] = [...nd[cat]]; nd[cat][i] = { name: v }; updateData("skills", nd); })}
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          {inp(sk.name, v => { const nd = { ...data.skills }; nd[cat] = [...nd[cat]]; nd[cat][i] = { name: v }; updateData("skills", nd); })}
+                        </div>
+                        <button
+                          onClick={() => {
+                            const nd = { ...data.skills };
+                            nd[cat] = nd[cat].filter((_, idx) => idx !== i);
+                            updateData("skills", nd);
+                          }}
+                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="Delete Skill"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     )}
+                    <button
+                      onClick={() => {
+                        const nd = { ...data.skills };
+                        nd[cat] = [...nd[cat], { name: "New Skill" }];
+                        updateData("skills", nd);
+                      }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(34, 211, 238, 0.1)", border: "1px dashed rgba(34, 211, 238, 0.4)", borderRadius: 8, padding: "6px 12px", color: S.cyan, cursor: "pointer", fontSize: "0.8rem", fontWeight: 500, fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(34, 211, 238, 0.2)"; e.currentTarget.style.borderColor = S.cyan; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(34, 211, 238, 0.1)"; e.currentTarget.style.borderColor = "rgba(34, 211, 238, 0.4)"; }}
+                    >
+                      <Plus size={12} /> Add Skill to {cat}
+                    </button>
                   </div>
                 ))}
+                <div style={{ marginTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                  <p style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: 8 }}>Add New Skill Category:</p>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. Databases, Cloud"
+                      id="new-skill-category-input"
+                      style={{ flex: 1, background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "10px 14px", color: "white", outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "0.9rem" }}
+                      onFocus={e => e.target.style.borderColor = S.purple}
+                      onBlur={e => e.target.style.borderColor = "#333"}
+                    />
+                    <button
+                      onClick={() => {
+                        const inputEl = document.getElementById("new-skill-category-input");
+                        if (inputEl) {
+                          const newCat = inputEl.value.trim();
+                          if (newCat && !data.skills[newCat]) {
+                            const nd = { ...data.skills, [newCat]: [] };
+                            updateData("skills", nd);
+                            inputEl.value = "";
+                          }
+                        }
+                      }}
+                      style={{ background: S.purple, border: "none", borderRadius: 10, padding: "10px 16px", color: "white", fontWeight: 600, cursor: "pointer", fontFamily: "'Kanit', sans-serif" }}
+                    >
+                      Add Category
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             {activeSection === "projects" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Projects</h3>
                 {data.projects.map((proj, i) => card(
-                  <div>
-                    <p style={{ color: "#aaa", fontWeight: 600, marginBottom: 12 }}>{proj.title}</p>
+                  <div key={proj.id || i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#aaa", fontWeight: 600 }}>{proj.title}</p>
+                      <button
+                        onClick={() => {
+                          const n = data.projects.filter((_, idx) => idx !== i);
+                          updateData("projects", n);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Project"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     {field("Title", proj.title, v => { const n = [...data.projects]; n[i] = { ...n[i], title: v }; updateData("projects", n); })}
                     {field("Description", proj.description, v => { const n = [...data.projects]; n[i] = { ...n[i], description: v }; updateData("projects", n); }, "text", 3)}
+                    {field("Image URL", proj.image, v => { const n = [...data.projects]; n[i] = { ...n[i], image: v }; updateData("projects", n); })}
+                    {field("Technologies (comma separated)", proj.tech ? proj.tech.join(", ") : "", v => { const n = [...data.projects]; n[i] = { ...n[i], tech: v.split(",").map(s => s.trim()).filter(Boolean) }; updateData("projects", n); })}
                     {field("GitHub URL", proj.github, v => { const n = [...data.projects]; n[i] = { ...n[i], github: v }; updateData("projects", n); })}
                     {field("Live URL", proj.live, v => { const n = [...data.projects]; n[i] = { ...n[i], live: v }; updateData("projects", n); })}
-                  </div>, proj.id
+                  </div>, proj.id || i
                 ))}
+                <button
+                  onClick={() => {
+                    const n = [...data.projects, { id: Date.now(), title: "New Project", description: "Project Description", tech: [], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", github: "#", live: "#", icon: Briefcase }];
+                    updateData("projects", n);
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"; e.currentTarget.style.borderColor = S.purple; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"; e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)"; }}
+                >
+                  <Plus size={16} /> Add New Project
+                </button>
               </div>
             )}
             {activeSection === "journey" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Journey</h3>
                 {data.journey.map((item, i) => card(
-                  <div>
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#aaa", fontWeight: 600 }}>{item.role || "Journey Entry"}</p>
+                      <button
+                        onClick={() => {
+                          const n = data.journey.filter((_, idx) => idx !== i);
+                          updateData("journey", n);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Journey Entry"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     {field("Role", item.role, v => { const n = [...data.journey]; n[i] = { ...n[i], role: v }; updateData("journey", n); })}
                     {field("Company", item.company, v => { const n = [...data.journey]; n[i] = { ...n[i], company: v }; updateData("journey", n); })}
                     {field("Duration", item.duration, v => { const n = [...data.journey]; n[i] = { ...n[i], duration: v }; updateData("journey", n); })}
                     {field("Description", item.description, v => { const n = [...data.journey]; n[i] = { ...n[i], description: v }; updateData("journey", n); }, "text", 3)}
                   </div>, i
                 ))}
+                <button
+                  onClick={() => {
+                    const n = [...data.journey, { role: "New Role", company: "New Company", duration: "2026", description: "Milestone description", icon: Cpu }];
+                    updateData("journey", n);
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"; e.currentTarget.style.borderColor = S.purple; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"; e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)"; }}
+                >
+                  <Plus size={16} /> Add Journey Milestone
+                </button>
               </div>
             )}
             {activeSection === "certifications" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Certifications</h3>
                 {data.certifications.map((cert, i) => card(
-                  <div>
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#aaa", fontWeight: 600 }}>{cert.title}</p>
+                      <button
+                        onClick={() => {
+                          const n = data.certifications.filter((_, idx) => idx !== i);
+                          updateData("certifications", n);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Certification"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     {field("Title", cert.title, v => { const n = [...data.certifications]; n[i] = { ...n[i], title: v }; updateData("certifications", n); })}
                     {field("Issuer", cert.issuer, v => { const n = [...data.certifications]; n[i] = { ...n[i], issuer: v }; updateData("certifications", n); })}
                     {field("Year", cert.year, v => { const n = [...data.certifications]; n[i] = { ...n[i], year: v }; updateData("certifications", n); })}
+                    {field("Image URL", cert.image, v => { const n = [...data.certifications]; n[i] = { ...n[i], image: v }; updateData("certifications", n); })}
                     {field("Credential Link", cert.credentialLink, v => { const n = [...data.certifications]; n[i] = { ...n[i], credentialLink: v }; updateData("certifications", n); })}
                   </div>, i
                 ))}
+                <button
+                  onClick={() => {
+                    const n = [...data.certifications, { title: "New Certification", issuer: "Issuer", year: "2026", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" }];
+                    updateData("certifications", n);
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"; e.currentTarget.style.borderColor = S.purple; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"; e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)"; }}
+                >
+                  <Plus size={16} /> Add Certification
+                </button>
               </div>
             )}
             {activeSection === "whatIBuild" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>What I Build</h3>
                 {data.whatIBuild.map((item, i) => card(
-                  <div>
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#aaa", fontWeight: 600 }}>{item.title}</p>
+                      <button
+                        onClick={() => {
+                          const n = data.whatIBuild.filter((_, idx) => idx !== i);
+                          updateData("whatIBuild", n);
+                        }}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Service"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     {field("Title", item.title, v => { const n = [...data.whatIBuild]; n[i] = { ...n[i], title: v }; updateData("whatIBuild", n); })}
                     {field("Description", item.description, v => { const n = [...data.whatIBuild]; n[i] = { ...n[i], description: v }; updateData("whatIBuild", n); }, "text", 3)}
                   </div>, i
                 ))}
+                <button
+                  onClick={() => {
+                    const n = [...data.whatIBuild, { title: "New Service", description: "Service description", icon: Code2, color: "#a855f7" }];
+                    updateData("whatIBuild", n);
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"; e.currentTarget.style.borderColor = S.purple; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"; e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.4)"; }}
+                >
+                  <Plus size={16} /> Add Service
+                </button>
+              </div>
+            )}
+            {activeSection === "githubStats" && (
+              <div>
+                <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>GitHub Stats</h3>
+                <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 16, padding: "20px", marginBottom: 16 }}>
+                  {field("GitHub Username", data.githubStats?.username ?? "", v => updateData("githubStats", { ...data.githubStats, username: v }))}
+                  {field("Contributions This Year", data.githubStats?.contributions ?? "", v => updateData("githubStats", { ...data.githubStats, contributions: v }))}
+                  {field("Open Repositories", data.githubStats?.repos ?? "", v => updateData("githubStats", { ...data.githubStats, repos: v }))}
+                  {field("Pull Requests", data.githubStats?.prs ?? "", v => updateData("githubStats", { ...data.githubStats, prs: v }))}
+                  {field("Stars Earned", data.githubStats?.stars ?? "", v => updateData("githubStats", { ...data.githubStats, stars: v }))}
+                  {field("Total Forks", data.githubStats?.forks ?? "", v => updateData("githubStats", { ...data.githubStats, forks: v }))}
+                  
+                  <button
+                    onClick={async () => {
+                      const username = data.githubStats?.username;
+                      if (!username) return alert("Please enter a username first.");
+                      try {
+                        // Fetch user info
+                        const resUser = await fetch(`https://api.github.com/users/${username}`);
+                        if (!resUser.ok) throw new Error("User not found or rate limit reached");
+                        const userData = await resUser.json();
+                        
+                        // Fetch user repos (up to 100)
+                        const resRepos = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
+                        let stars = 0;
+                        let forks = 0;
+                        if (resRepos.ok) {
+                          const reposData = await resRepos.json();
+                          reposData.forEach(r => {
+                            stars += r.stargazers_count || 0;
+                            forks += r.forks_count || 0;
+                          });
+                        }
+                        
+                        updateData("githubStats", {
+                          username,
+                          contributions: data.githubStats?.contributions || "500+", 
+                          repos: String(userData.public_repos ?? 0),
+                          prs: data.githubStats?.prs || "24", 
+                          stars: String(stars),
+                          forks: String(forks)
+                        });
+                        alert("Successfully fetched live stats from GitHub API! Don't forget to click Save.");
+                      } catch (err) {
+                        alert("Error fetching from GitHub API: " + err.message);
+                      }
+                    }}
+                    style={{
+                      background: S.cyan,
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "12px 20px",
+                      color: "#0c0c0c",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "'Kanit', sans-serif",
+                      marginTop: 8
+                    }}
+                  >
+                    Fetch Live Stats
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -990,21 +1260,56 @@ function HeroSection() {
       {/* Description strip */}
       <FadeIn delay={0.65} y={20}>
         <div style={{
-          background: "rgba(215,226,234,0.03)", borderTop: "1px solid rgba(215,226,234,0.06)",
-          padding: "clamp(16px,2vw,28px) clamp(20px,4vw,60px)",
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 24, flexWrap: "wrap",
+          background: "rgba(215,226,234,0.02)",
+          borderTop: "1px solid rgba(215,226,234,0.06)",
+          padding: "clamp(24px, 4vw, 40px) clamp(20px, 4vw, 60px)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 20,
+          textAlign: "center",
         }}>
-          <p style={{ color: S.text, opacity: 0.6, fontWeight: 300, maxWidth: 560, lineHeight: 1.6, fontSize: "clamp(0.8rem,1.2vw,1rem)" }}>
+          <p style={{
+            color: S.text,
+            opacity: 0.75,
+            fontWeight: 300,
+            maxWidth: 720,
+            lineHeight: 1.7,
+            fontSize: "clamp(0.85rem, 1.2vw, 1.05rem)",
+            margin: "0 auto",
+          }}>
             {data.personalInfo.heroDescription}
           </p>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             {data.socialLinks.map(link => (
               <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer"
-                style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(215,226,234,0.15)", borderRadius: 10, color: S.text, opacity: 0.6, transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.borderColor = "rgba(215,226,234,0.4)"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = "0.6"; e.currentTarget.style.borderColor = "rgba(215,226,234,0.15)"; }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(215,226,234,0.12)",
+                  borderRadius: 12,
+                  color: S.text,
+                  opacity: 0.6,
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.background = "rgba(168,85,247,0.1)";
+                  e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)";
+                  e.currentTarget.style.color = S.purple;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.opacity = "0.6";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                  e.currentTarget.style.borderColor = "rgba(215,226,234,0.12)";
+                  e.currentTarget.style.color = S.text;
+                }}
               >
-                <link.icon size={16} />
+                <link.icon size={18} />
               </a>
             ))}
           </div>
@@ -1107,7 +1412,7 @@ function EducationSection() {
                   <Sparkles size={12} /> Focused On
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {edu.focus.map(item => (
+                  {(edu.focus || []).map(item => (
                     <span key={item} className="glass" style={{ padding: "6px 14px", borderRadius: 9999, fontSize: "0.8rem", color: "#aaa" }}>{item}</span>
                   ))}
                 </div>
@@ -1136,9 +1441,9 @@ function ProjectsSection() {
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 480px), 1fr))", gap: "clamp(16px,2vw,32px)" }}>
           {data.projects.map((project, i) => {
-            const Icon = project.icon;
+            const Icon = project.icon || Briefcase;
             return (
-              <FadeIn key={project.id} delay={i * 0.08} y={30}>
+              <FadeIn key={project.id || i} delay={i * 0.08} y={30}>
                 <motion.div
                   whileHover={{ y: -8, boxShadow: "0 24px 48px rgba(0,0,0,0.4), 0 0 20px rgba(168,85,247,0.1)" }}
                   transition={{ duration: 0.3 }}
@@ -1146,9 +1451,9 @@ function ProjectsSection() {
                   style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%" }}
                 >
                   <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, aspectRatio: "16/9" }}>
-                    <img src={project.image} alt={project.title} className="project-image" />
+                    {project.image && <img src={project.image} alt={project.title} className="project-image" />}
                     <div style={{ position: "absolute", bottom: 12, left: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {project.tech.map(t => (
+                      {(project.tech || []).map(t => (
                         <span key={t} style={{ padding: "4px 10px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 9999, fontSize: "0.68rem", color: "white", border: "1px solid rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t}</span>
                       ))}
                     </div>
@@ -1159,7 +1464,7 @@ function ProjectsSection() {
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       {[{ icon: Github, href: project.github }, { icon: ExternalLink, href: project.live }].map(({ icon: BtnIcon, href }) => (
-                        <a key={href} href={href} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
+                        <a key={href || "#"} href={href || "#"} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
                           onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#666"}>
                           <BtnIcon size={16} />
                         </a>
@@ -1232,13 +1537,13 @@ function JourneySection() {
           <p style={{ color: "#666", marginTop: 16, textAlign: "center", fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>Tracing the path from interest to innovation.</p>
         </FadeIn>
         <div style={{ position: "relative", marginLeft: "clamp(16px,4vw,48px)", paddingLeft: 2 }}>
-          <div style={{ position: "absolute", left: -1, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, #a855f7, #22d3ee, transparent)" }} />
+          <div style={{ position: "absolute", left: -1, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary), transparent)" }} />
           {data.journey.map((item, i) => {
-            const Icon = item.icon;
+            const Icon = item.icon || Cpu;
             return (
               <FadeIn key={i} delay={i * 0.1} x={-20} y={0}>
                 <div style={{ position: "relative", paddingLeft: "clamp(28px,4vw,56px)", marginBottom: "clamp(28px,4vw,56px)" }}>
-                  <div style={{ position: "absolute", left: -9, top: 4, width: 16, height: 16, background: S.dark, border: "2px solid #22d3ee", borderRadius: "50%", boxShadow: "0 0 15px rgba(34,211,238,0.8)", zIndex: 1 }} />
+                  <div style={{ position: "absolute", left: -9, top: 4, width: 16, height: 16, background: S.dark, border: "2px solid var(--accent-secondary)", borderRadius: "50%", boxShadow: "0 0 15px var(--accent-secondary)", zIndex: 1 }} />
                   <GlassCard style={{ position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", top: 0, right: 0, opacity: 0.05 }}>
                       <Icon size={120} />
@@ -1269,10 +1574,19 @@ function JourneySection() {
 // ============================================================
 function GitHubSection() {
   const { data } = useAdmin();
+  const stats = data.githubStats || {
+    username: "NavaneethRaj05",
+    contributions: "500+",
+    repos: "12",
+    prs: "24",
+    stars: "42",
+    forks: "18"
+  };
+
   const githubStats = [
-    { label: "Contributions this year", value: "500+", color: S.purple },
-    { label: "Open Repositories", value: "12", color: S.cyan },
-    { label: "Pull Requests", value: "24", color: "#10b981" },
+    { label: "Contributions this year", value: stats.contributions, color: S.purple },
+    { label: "Open Repositories", value: stats.repos, color: S.cyan },
+    { label: "Pull Requests", value: stats.prs, color: "#10b981" },
   ];
   return (
     <section id="github" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
@@ -1293,7 +1607,7 @@ function GitHubSection() {
                   <Github size={28} color="white" />
                 </div>
                 <div>
-                  <p style={{ color: "white", fontWeight: 700, fontSize: "1rem", fontFamily: "'Kanit', sans-serif" }}>NavaneethRaj05</p>
+                  <p style={{ color: "white", fontWeight: 700, fontSize: "1rem", fontFamily: "'Kanit', sans-serif" }}>{stats.username}</p>
                   <p style={{ color: "#666", fontSize: "0.8rem" }}>github.com</p>
                 </div>
               </div>
@@ -1303,7 +1617,7 @@ function GitHubSection() {
                   <div style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>{stat.label}</div>
                 </div>
               ))}
-              <a href={data.personalInfo.github} target="_blank" rel="noopener noreferrer"
+              <a href={stats.username ? `https://github.com/${stats.username}` : (data.personalInfo.github || "#")} target="_blank" rel="noopener noreferrer"
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "white", color: "black", borderRadius: 16, padding: "14px", fontWeight: 700, textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "0.1em", transition: "background 0.2s", textDecoration: "none" }}
                 onMouseEnter={e => e.currentTarget.style.background = S.cyan}
                 onMouseLeave={e => e.currentTarget.style.background = "white"}
@@ -1316,10 +1630,10 @@ function GitHubSection() {
             <GlassCard>
               <h3 style={{ color: "white", fontWeight: 700, marginBottom: 24, fontFamily: "'Kanit', sans-serif", display: "flex", alignItems: "center", gap: 10 }}>
                 Repository Insights
-                <span style={{ fontSize: "0.7rem", color: S.cyan, background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 9999, padding: "2px 10px" }}>Simulated</span>
+                <span style={{ fontSize: "0.7rem", color: S.cyan, background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 9999, padding: "2px 10px" }}>Live Sync</span>
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-                {[{ label: "Stars Earned", value: "42", icon: Star, color: "#f59e0b" }, { label: "Total Forks", value: "18", icon: GitFork, color: S.purple }].map(stat => (
+                {[{ label: "Stars Earned", value: stats.stars, icon: Star, color: "#f59e0b" }, { label: "Total Forks", value: stats.forks, icon: GitFork, color: S.purple }].map(stat => (
                   <div key={stat.label} className="glass" style={{ borderRadius: 20, padding: "clamp(16px,2vw,24px)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <span style={{ color: "#888", fontSize: "0.8rem" }}>{stat.label}</span>
@@ -1364,7 +1678,7 @@ function WhatIBuildSection() {
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
           {data.whatIBuild.map((service, i) => {
-            const Icon = service.icon;
+            const Icon = service.icon || Code2;
             return (
               <FadeIn key={service.title} delay={i * 0.1} y={30}>
                 <motion.div
@@ -1397,7 +1711,7 @@ function CertificationsSection() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn delay={0} y={40} style={{ marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading gradient={false} light>Certifications</SectionHeading>
-          <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, #a855f7, #22d3ee)", borderRadius: 9999, margin: "16px auto 0" }} />
+          <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))", borderRadius: 9999, margin: "16px auto 0" }} />
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
           {data.certifications.map((cert, i) => (
@@ -1499,12 +1813,12 @@ function ContactSection() {
               <div>
                 <label style={{ display: "block", color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>Your Message</label>
                 <textarea placeholder="How can I help you today?" rows={5} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 20px", color: "white", outline: "none", fontSize: "0.95rem", resize: "none", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.4)"}
+                  onFocus={e => e.target.style.borderColor = "var(--accent-primary)"}
                   onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
                 />
               </div>
-              <motion.button type="submit" whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(168,85,247,0.4)" }} whileTap={{ scale: 0.98 }}
-                style={{ background: "linear-gradient(90deg, #a855f7, #22d3ee)", border: "none", borderRadius: 16, padding: "16px", color: "white", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", cursor: "pointer", fontFamily: "'Kanit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+              <motion.button type="submit" whileHover={{ scale: 1.02, boxShadow: "0 0 30px var(--accent-primary)" }} whileTap={{ scale: 0.98 }}
+                style={{ background: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))", border: "none", borderRadius: 16, padding: "16px", color: "white", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", cursor: "pointer", fontFamily: "'Kanit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
               ><Send size={16} /> Send Transmission</motion.button>
             </motion.form>
           </div>
