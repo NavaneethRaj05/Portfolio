@@ -2,17 +2,28 @@
 // POST /api/save  { data: <portfolioData> }  →  upserts into MongoDB
 import { MongoClient } from "mongodb";
 
-const URI        = process.env.MONGODB_URI;
-const DB_NAME    = process.env.MONGODB_DB    || "portfolio";
-const COLLECTION = process.env.MONGODB_COL   || "Nav";
-const DOC_ID     = "portfolio_singleton";
-
+const DOC_ID = "portfolio_singleton";
 let cachedClient = null;
 
 async function getClient() {
-  if (cachedClient) return cachedClient;
-  cachedClient = new MongoClient(URI, { serverSelectionTimeoutMS: 5000 });
-  await cachedClient.connect();
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error("MONGODB_URI not set");
+
+  if (cachedClient) {
+    try {
+      await cachedClient.db("admin").command({ ping: 1 });
+      return cachedClient;
+    } catch {
+      cachedClient = null;
+    }
+  }
+
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  await client.connect();
+  cachedClient = client;
   return cachedClient;
 }
 
@@ -21,9 +32,13 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  if (!URI) return res.status(500).json({ error: "MONGODB_URI not set" });
+  const uri = process.env.MONGODB_URI;
+  if (!uri) return res.status(500).json({ error: "MONGODB_URI not set" });
+
+  const DB_NAME    = process.env.MONGODB_DB  || "portfolio";
+  const COLLECTION = process.env.MONGODB_COL || "Nav";
 
   try {
     const { data } = req.body;
@@ -40,6 +55,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
+    cachedClient = null;
     console.error("[api/save]", err.message);
     return res.status(500).json({ error: err.message });
   }
