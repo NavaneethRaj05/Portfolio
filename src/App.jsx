@@ -3,16 +3,18 @@
 // Jack 3D Creator frontend + Navaneeth's real data + Admin CMS
 // ============================================================
 
-import { useEffect, useState, createContext, useContext, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, createContext, useContext, useMemo, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import {
   Github, Linkedin, Twitter, Mail, X, Lock, Save, LogOut,
   User, GraduationCap, Briefcase, Award, Code2, Layout,
   Terminal, Cpu, MessageSquare, Calendar, ChevronDown,
   ExternalLink, Star, GitFork, MapPin, Send,
   Sparkles, BookOpen, Trophy, Code, Smartphone, Menu,
-  Plus, Trash2, Palette
+  Plus, Trash2, Palette, Settings, CheckCircle, AlertCircle,
+  Key, Database, RefreshCw
 } from "lucide-react";
+import { mongoLoad, mongoSave, sendEmail, mongoConfigured, ADMIN_EMAIL } from "./services.js";
 
 // ============================================================
 // GOOGLE FONT + GLOBAL STYLES
@@ -39,7 +41,7 @@ const GLOBAL_CSS = `
     border: 1px solid rgba(255,255,255,0.08);
   }
   .text-gradient {
-    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    background: linear-gradient(90deg, #a855f7, #22d3ee);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -49,27 +51,47 @@ const GLOBAL_CSS = `
   input, textarea, button { font-family: 'Kanit', sans-serif; }
   section { scroll-margin-top: 100px; }
 
+  /* ── Marquee ── */
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .marquee-track { display: flex; width: max-content; animation: marquee 28s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
+
+  /* ── Glow pulse ── */
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.15); }
+    50%        { box-shadow: 0 0 40px rgba(168,85,247,0.4), 0 0 80px rgba(168,85,247,0.15); }
+  }
+  .glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+
+  /* ── Floating particle ── */
+  @keyframes floatUp { 0% { opacity:0; transform: translateY(0) scale(0.5); } 50% { opacity:1; } 100% { opacity:0; transform: translateY(-120px) scale(1); } }
+  .particle { position:absolute; border-radius:50%; pointer-events:none; animation: floatUp 4s ease-in-out infinite; }
+
+  /* ── Scan line ── */
+  @keyframes scanLine { 0%{top:0%} 100%{top:100%} }
+  .scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(34,211,238,0.4),transparent); animation: scanLine 3s linear infinite; pointer-events:none; }
+
+  /* ── Border glow on hover ── */
+  .glow-card { transition: box-shadow 0.3s, border-color 0.3s; }
+  .glow-card:hover { box-shadow: 0 0 0 1px rgba(168,85,247,0.4), 0 8px 32px rgba(168,85,247,0.15) !important; }
+
+  /* ── Typewriter cursor ── */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor { display:inline-block; width:3px; height:1em; background:currentColor; margin-left:3px; animation:blink 1s step-end infinite; vertical-align:middle; }
+
+  /* ── Counter number ── */
+  @keyframes countUp { from { opacity:0; transform: scale(0.6); } to { opacity:1; transform: scale(1); } }
+  .count-anim { animation: countUp 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
+
   /* Mobile Responsiveness Improvements */
-  .nav-desktop {
-    display: flex !important;
-  }
-  .nav-mobile-btn {
-    display: none !important;
-  }
-  .nav-desktop-btn {
-    display: inline-flex !important;
-  }
-  .nav-mobile-only {
-    display: none !important;
-  }
+  .nav-desktop { display: flex !important; }
+  .nav-mobile-btn { display: none !important; }
+  .nav-desktop-btn { display: inline-flex !important; }
+  .nav-mobile-only { display: none !important; }
   
-  .hero-tagline-container {
-    height: 28px;
-    overflow: hidden;
-    margin-bottom: 48px;
-  }
+  .hero-tagline-container { height: 28px; overflow: hidden; margin-bottom: 48px; }
   .hero-tagline {
-    color: var(--accent-secondary);
+    color: #22d3ee;
     font-family: monospace;
     text-transform: uppercase;
     letter-spacing: 0.25em;
@@ -78,110 +100,59 @@ const GLOBAL_CSS = `
     line-height: 1.4;
   }
   
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
-  .project-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: all 0.5s ease;
-  }
+  .project-image { width: 100%; height: 100%; object-fit: cover; transition: all 0.5s ease; }
 
-  .cert-card {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: clamp(16px, 2vw, 28px);
-  }
+  .cert-card { display: flex; flex-direction: row; align-items: center; gap: clamp(16px, 2vw, 28px); }
 
-  .admin-layout {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    overflow: hidden;
-  }
-  .admin-sidebar {
-    width: 200px;
-    background: rgba(255,255,255,0.02);
-    padding: 16px;
-    border-right: 1px solid rgba(255,255,255,0.04);
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
+  .admin-layout { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
+  .admin-sidebar { width: 200px; background: rgba(255,255,255,0.02); padding: 16px; border-right: 1px solid rgba(255,255,255,0.04); overflow-y: auto; flex-shrink: 0; }
 
   @media (hover: hover) {
-    .project-image {
-      filter: blur(2px);
-      opacity: 0.5;
-    }
-    .project-image:hover {
-      filter: none;
-      opacity: 1;
-    }
+    .project-image { filter: blur(2px); opacity: 0.5; }
+    .project-image:hover { filter: none; opacity: 1; }
   }
 
   @media (max-width: 768px) {
-    .nav-desktop {
-      display: none !important;
-    }
-    .nav-mobile-btn {
-      display: flex !important;
-    }
-    .nav-desktop-btn {
-      display: none !important;
-    }
-    .nav-mobile-only {
-      display: flex !important;
-    }
-    .admin-layout {
-      flex-direction: column;
-    }
+    .nav-desktop { display: none !important; }
+    .nav-mobile-btn { display: flex !important; }
+    .nav-desktop-btn { display: none !important; }
+    .nav-mobile-only { display: flex !important; }
+    .admin-layout { flex-direction: column; }
     .admin-sidebar {
-      width: 100%;
-      height: auto;
-      display: flex;
-      flex-direction: row;
-      overflow-x: auto;
-      border-right: none;
+      width: 100%; height: auto;
+      display: flex; flex-direction: row;
+      overflow-x: auto; border-right: none;
       border-bottom: 1px solid rgba(255,255,255,0.04);
-      gap: 8px;
-      padding: 12px;
-      scrollbar-width: none;
+      gap: 6px; padding: 10px 12px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
     }
-    .admin-sidebar::-webkit-scrollbar {
-      display: none;
-    }
-    .admin-sidebar button {
-      margin-bottom: 0 !important;
-      white-space: nowrap;
-    }
+    .admin-sidebar::-webkit-scrollbar { display: none; }
+    .admin-sidebar button { margin-bottom: 0 !important; white-space: nowrap; min-width: max-content; }
+    /* Contact form responsive */
+    .contact-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* iOS Safari safe area */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    footer { padding-bottom: calc(clamp(32px,4vw,56px) + env(safe-area-inset-bottom)); }
+  }
+
+  /* Touch-friendly tap targets */
+  @media (hover: none) {
+    button, a { min-height: 44px; min-width: 44px; }
+    input, textarea { font-size: 16px !important; } /* Prevents iOS zoom on focus */
   }
 
   @media (max-width: 600px) {
-    .hero-tagline-container {
-      height: 48px !important;
-    }
-    .hero-tagline {
-      letter-spacing: 0.1em !important;
-      font-size: 11px !important;
-    }
-    .stats-grid {
-      grid-template-columns: 1fr !important;
-      gap: 12px !important;
-    }
+    .hero-tagline-container { height: 48px !important; }
+    .hero-tagline { letter-spacing: 0.1em !important; font-size: 11px !important; }
+    .stats-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
   }
 
   @media (max-width: 550px) {
-    .cert-card {
-      flex-direction: column !important;
-      align-items: center !important;
-      text-align: center !important;
-      gap: 16px !important;
-    }
+    .cert-card { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
   }
 `;
 
@@ -263,7 +234,8 @@ const githubStats = {
 // ADMIN CONTEXT
 // ============================================================
 const AdminContext = createContext(undefined);
-const ADMIN_PIN = "1234";
+const DEFAULT_PIN = "1234";
+const PIN_STORAGE_KEY = "portfolioAdminPin";
 
 function removeIcons(obj) {
   if (Array.isArray(obj)) return obj.map(removeIcons);
@@ -308,35 +280,69 @@ function AdminProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [dbStatus, setDbStatus] = useState("idle"); // "idle"|"syncing"|"synced"|"error"
   const initialData = { personalInfo, socialLinks, education, skills, projects, journey, certifications, whatIBuild, githubStats };
 
-  // Safe localStorage helpers — fall back silently in sandboxed envs
+  // Safe localStorage helpers
   const lsGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
   const lsSet = (key, val) => { try { localStorage.setItem(key, val); return true; } catch { return false; } };
+
+  // PIN stored in localStorage so admin can change it
+  const [adminPin, setAdminPin] = useState(() => lsGet(PIN_STORAGE_KEY) || DEFAULT_PIN);
 
   const [data, setData] = useState(() => {
     try {
       const saved = lsGet("portfolioData");
       if (saved) return mergeWithIcons(JSON.parse(saved), initialData);
-    } catch (e) {
-      console.warn("Failed to load portfolioData", e);
-    }
+    } catch (e) { console.warn("Failed to load portfolioData", e); }
     return initialData;
   });
 
+  // On mount: try to load from MongoDB, fall back to localStorage silently
+  useEffect(() => {
+    if (!mongoConfigured()) return;
+    setDbStatus("syncing");
+    mongoLoad().then((remoteData) => {
+      if (remoteData) {
+        setData(mergeWithIcons(remoteData, initialData));
+        lsSet("portfolioData", JSON.stringify(remoteData)); // keep local cache fresh
+        setDbStatus("synced");
+      } else {
+        setDbStatus("idle");
+      }
+    }).catch(() => setDbStatus("error"));
+  }, []); // eslint-disable-line
+
   const verifyPin = (pin) => {
-    if (pin === ADMIN_PIN) { setIsAdmin(true); setShowPinModal(false); return true; }
+    if (pin === adminPin) { setIsAdmin(true); setShowPinModal(false); return true; }
     return false;
   };
   const logout = () => setIsAdmin(false);
   const updateData = (section, newData) => setData(prev => ({ ...prev, [section]: newData }));
-  const saveData = () => {
-    const ok = lsSet("portfolioData", JSON.stringify(removeIcons(data)));
-    setSaveMsg(ok ? "✓ Saved!" : "✓ Applied (localStorage unavailable in preview)");
-    setTimeout(() => setSaveMsg(""), 2500);
+
+  const changePin = (newPin) => {
+    setAdminPin(newPin);
+    lsSet(PIN_STORAGE_KEY, newPin);
   };
+
+  const saveData = async () => {
+    const clean = removeIcons(data);
+    // Always save to localStorage first (instant)
+    lsSet("portfolioData", JSON.stringify(clean));
+    // Then try MongoDB
+    if (mongoConfigured()) {
+      setDbStatus("syncing");
+      const ok = await mongoSave(clean);
+      setDbStatus(ok ? "synced" : "error");
+      setSaveMsg(ok ? "✓ Saved to MongoDB!" : "✓ Saved locally (DB unavailable)");
+    } else {
+      setSaveMsg("✓ Saved locally!");
+    }
+    setTimeout(() => setSaveMsg(""), 3000);
+  };
+
   return (
-    <AdminContext.Provider value={{ isAdmin, showPinModal, setShowPinModal, verifyPin, logout, data, updateData, saveData, saveMsg }}>
+    <AdminContext.Provider value={{ isAdmin, showPinModal, setShowPinModal, verifyPin, logout, data, updateData, saveData, saveMsg, dbStatus, changePin, adminPin }}>
       {children}
     </AdminContext.Provider>
   );
@@ -352,10 +358,10 @@ function useAdmin() {
 // SHARED PRIMITIVES
 // ============================================================
 const S = {
-  dark: "#0C0C0C",
-  text: "#D7E2EA",
-  purple: "var(--accent-primary)",
-  cyan: "var(--accent-secondary)",
+  dark:   "#0C0C0C",
+  text:   "#D7E2EA",
+  purple: "#a855f7",
+  cyan:   "#22d3ee",
 };
 
 function FadeIn({ children, delay = 0, duration = 0.7, x = 0, y = 30, style = {}, className = "" }) {
@@ -370,6 +376,154 @@ function FadeIn({ children, delay = 0, duration = 0.7, x = 0, y = 30, style = {}
     >
       {children}
     </motion.div>
+  );
+}
+
+// ── Slide from left ──
+function SlideLeft({ children, delay = 0, style = {} }) {
+  return (
+    <motion.div style={style}
+      initial={{ opacity: 0, x: -80 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+    >{children}</motion.div>
+  );
+}
+
+// ── Slide from right ──
+function SlideRight({ children, delay = 0, style = {} }) {
+  return (
+    <motion.div style={style}
+      initial={{ opacity: 0, x: 80 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+    >{children}</motion.div>
+  );
+}
+
+// ── Typewriter ──
+function Typewriter({ text, speed = 55, style = {} }) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    setDisplayed("");
+    setDone(false);
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) { clearInterval(t); setDone(true); }
+    }, speed);
+    return () => clearInterval(t);
+  }, [text, speed]);
+  return (
+    <span style={style}>{displayed}{!done && <span className="cursor" />}</span>
+  );
+}
+
+// ── Animated counter ──
+function AnimatedCounter({ target, suffix = "", duration = 1.8 }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const observed = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !observed.current) {
+        observed.current = true;
+        const num = parseInt(String(target).replace(/\D/g, ""), 10) || 0;
+        const start = Date.now();
+        const tick = () => {
+          const elapsed = (Date.now() - start) / (duration * 1000);
+          const eased = 1 - Math.pow(1 - Math.min(elapsed, 1), 3);
+          setCount(Math.round(eased * num));
+          if (elapsed < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [target, duration]);
+  const raw = String(target);
+  const hasSuffix = /\D/.test(raw);
+  return <span ref={ref}>{count}{hasSuffix ? raw.replace(/\d/g, "") : ""}{suffix}</span>;
+}
+
+// ── Floating Particles Background ──
+function ParticlesBg({ count = 18 }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: Math.random() * 4 + 2,
+      delay: `${Math.random() * 6}s`,
+      duration: `${4 + Math.random() * 5}s`,
+      color: Math.random() > 0.5 ? "rgba(168,85,247,0.5)" : "rgba(34,211,238,0.5)",
+    })), [count]);
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+      {particles.map(p => (
+        <div key={p.id} className="particle" style={{
+          left: p.left, top: p.top, width: p.size, height: p.size,
+          background: p.color, animationDelay: p.delay, animationDuration: p.duration,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ── Marquee ticker ──
+function MarqueeTicker({ items }) {
+  const doubled = [...items, ...items];
+  return (
+    <div style={{ overflow: "hidden", width: "100%", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 0", background: "rgba(255,255,255,0.01)" }}>
+      <div className="marquee-track">
+        {doubled.map((item, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 12, paddingRight: 48, color: "#555", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", whiteSpace: "nowrap" }}>
+            <span style={{ color: "rgba(168,85,247,0.6)", fontSize: "0.6rem" }}>✦</span>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Cursor glow follower ──
+function CursorGlow() {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 80, damping: 20 });
+  const springY = useSpring(y, { stiffness: 80, damping: 20 });
+  useEffect(() => {
+    const handler = (e) => { x.set(e.clientX); y.set(e.clientY); };
+    window.addEventListener("mousemove", handler);
+    return () => window.removeEventListener("mousemove", handler);
+  }, [x, y]);
+  return (
+    <motion.div style={{
+      position: "fixed", pointerEvents: "none", zIndex: 9999,
+      width: 320, height: 320, borderRadius: "50%",
+      background: "radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)",
+      translateX: "-50%", translateY: "-50%",
+      left: springX, top: springY,
+    }} />
+  );
+}
+
+// ── Section divider with glow ──
+function GlowDivider() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 clamp(20px,4vw,60px)" }}>
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, transparent, rgba(168,85,247,0.3), transparent)" }} />
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(168,85,247,0.8)", boxShadow: "0 0 12px rgba(168,85,247,0.6)" }} />
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, transparent, rgba(34,211,238,0.3), transparent)" }} />
+    </div>
   );
 }
 
@@ -500,21 +654,24 @@ function Navbar() {
             boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         >
-          {/* NR Logo box */}
+          {/* NR Logo box — click to open admin PIN */}
           <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={() => setShowPinModal(true)}
+            title="Admin Access"
             style={{
               flexShrink: 0, width: 44, height: 44,
-              background: "white", borderRadius: 12,
+              background: isAdmin ? "linear-gradient(135deg, #a855f7, #7c3aed)" : "white",
+              borderRadius: 12,
               display: "flex", alignItems: "center", justifyContent: "center",
-              border: "none", cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              transition: "transform 0.2s, box-shadow 0.2s",
+              border: isAdmin ? "2px solid rgba(168,85,247,0.6)" : "none",
+              cursor: "pointer",
+              boxShadow: isAdmin ? "0 4px 16px rgba(168,85,247,0.4)" : "0 2px 8px rgba(0,0,0,0.3)",
+              transition: "transform 0.2s, box-shadow 0.2s, background 0.2s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(168,85,247,0.4)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)"; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(168,85,247,0.5)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = isAdmin ? "0 4px 16px rgba(168,85,247,0.4)" : "0 2px 8px rgba(0,0,0,0.3)"; }}
           >
-            <span style={{ color: "#0C0C0C", fontWeight: 900, fontSize: "0.95rem", fontFamily: "'Kanit', sans-serif", letterSpacing: "-0.02em" }}>NR</span>
+            <span style={{ color: isAdmin ? "white" : "#0C0C0C", fontWeight: 900, fontSize: "0.95rem", fontFamily: "'Kanit', sans-serif", letterSpacing: "-0.02em" }}>NR</span>
           </button>
 
           {/* Center nav links — hidden on small screens */}
@@ -549,24 +706,8 @@ function Navbar() {
             })}
           </div>
 
-          {/* Right side: admin lock + Resume pill */}
+          {/* Right side: Resume pill */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <button
-              onClick={() => setShowPinModal(true)}
-              title="Admin Login"
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(215,226,234,0.15)",
-                borderRadius: 8, padding: "8px 10px", cursor: "pointer",
-                color: isAdmin ? S.purple : "rgba(215,226,234,0.4)",
-                transition: "all 0.2s", display: "flex", alignItems: "center",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(168,85,247,0.4)"; e.currentTarget.style.color = S.purple; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(215,226,234,0.15)"; e.currentTarget.style.color = isAdmin ? S.purple : "rgba(215,226,234,0.4)"; }}
-            >
-              <Lock size={13} />
-            </button>
-
             {/* Resume pill button — matches reference image */}
             <a
               href={data.personalInfo.resumeLink || "#"}
@@ -667,7 +808,7 @@ function PinModal() {
   const handleSubmit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (verifyPin(pin)) { setPin(""); setError(""); }
-    else { setError("Incorrect PIN — try 1234"); setPin(""); }
+    else { setError("Incorrect PIN. Please try again."); setPin(""); }
   };
 
   return (
@@ -719,7 +860,7 @@ function PinModal() {
                 transition: "background 0.2s",
               }}
                 onMouseEnter={e => e.target.style.background = "#9333ea"}
-                onMouseLeave={e => e.target.style.background = S.purple}
+                onMouseLeave={e => e.target.style.background = "#a855f7"}
               >Unlock</button>
             </form>
           </motion.div>
@@ -733,19 +874,20 @@ function PinModal() {
 // ADMIN PORTAL
 // ============================================================
 function AdminPortal() {
-  const { data, updateData, saveData, logout, saveMsg } = useAdmin();
+  const { data, updateData, saveData, logout, saveMsg, dbStatus, changePin } = useAdmin();
   const [activeSection, setActiveSection] = useState("personal");
 
   const sections = [
-    { id: "personal", label: "Personal Info", icon: User },
-    { id: "social", label: "Social Links", icon: Github },
-    { id: "education", label: "Education", icon: GraduationCap },
-    { id: "skills", label: "Skills", icon: Code2 },
-    { id: "projects", label: "Projects", icon: Briefcase },
-    { id: "journey", label: "Journey", icon: Layout },
-    { id: "certifications", label: "Certifications", icon: Award },
-    { id: "whatIBuild", label: "What I Build", icon: Code2 },
-    { id: "githubStats", label: "GitHub Stats", icon: Github },
+    { id: "personal",        label: "Personal Info",  icon: User },
+    { id: "social",          label: "Social Links",   icon: Github },
+    { id: "education",       label: "Education",      icon: GraduationCap },
+    { id: "skills",          label: "Skills",         icon: Code2 },
+    { id: "projects",        label: "Projects",       icon: Briefcase },
+    { id: "journey",         label: "Journey",        icon: Layout },
+    { id: "certifications",  label: "Certifications", icon: Award },
+    { id: "whatIBuild",      label: "What I Build",   icon: Code2 },
+    { id: "githubStats",     label: "GitHub Stats",   icon: Github },
+    { id: "settings",        label: "Settings",       icon: Settings },
   ];
 
   const inp = (val, onChange, type = "text", rows) => rows ? (
@@ -776,14 +918,30 @@ function AdminPortal() {
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(12px)" }} onClick={logout} />
       <div style={{ position: "relative", background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, width: "100%", maxWidth: 1100, maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <h2 style={{ color: "white", fontWeight: 700, fontSize: "1.3rem", fontFamily: "'Kanit', sans-serif" }}>Admin Portal</h2>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={saveData} style={{ display: "flex", alignItems: "center", gap: 6, background: saveMsg ? "#059669" : "#059669", border: "none", borderRadius: 8, padding: "8px 16px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Kanit', sans-serif", minWidth: 90, justifyContent: "center" }}>
-              <Save size={14} /> {saveMsg || "Save"}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h2 style={{ color: "white", fontWeight: 700, fontSize: "1.2rem", fontFamily: "'Kanit', sans-serif" }}>Admin Portal</h2>
+            {/* DB sync indicator */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
+              background: dbStatus === "synced" ? "rgba(16,185,129,0.1)" : dbStatus === "syncing" ? "rgba(168,85,247,0.1)" : dbStatus === "error" ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.3)" : dbStatus === "syncing" ? "rgba(168,85,247,0.3)" : dbStatus === "error" ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.08)"}`,
+              color: dbStatus === "synced" ? "#10b981" : dbStatus === "syncing" ? S.purple : dbStatus === "error" ? "#ef4444" : "#666",
+            }}>
+              {dbStatus === "syncing" && <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw size={10} /></motion.div>}
+              {dbStatus === "synced" && <Database size={10} />}
+              {dbStatus === "error"  && <AlertCircle size={10} />}
+              {dbStatus === "idle"   && <Database size={10} />}
+              <span style={{ marginLeft: 3 }}>
+                {dbStatus === "synced" ? "MongoDB" : dbStatus === "syncing" ? "Syncing…" : dbStatus === "error" ? "DB Offline" : "Local Only"}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={saveData} style={{ display: "flex", alignItems: "center", gap: 6, background: saveMsg ? "#059669" : "#059669", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", minWidth: 80, justifyContent: "center" }}>
+              <Save size={13} /> {saveMsg || "Save"}
             </button>
-            <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "#dc2626", border: "none", borderRadius: 8, padding: "8px 16px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Kanit', sans-serif" }}>
-              <LogOut size={14} /> Logout
+            <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "#dc2626", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif" }}>
+              <LogOut size={13} /> Logout
             </button>
           </div>
         </div>
@@ -1142,7 +1300,7 @@ function AdminPortal() {
                       }
                     }}
                     style={{
-                      background: S.cyan,
+                      background: "#22d3ee",
                       border: "none",
                       borderRadius: 10,
                       padding: "12px 20px",
@@ -1150,16 +1308,96 @@ function AdminPortal() {
                       fontWeight: 700,
                       cursor: "pointer",
                       fontFamily: "'Kanit', sans-serif",
-                      marginTop: 8
+                      marginTop: 8,
+                      transition: "opacity 0.2s",
                     }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                   >
                     Fetch Live Stats
                   </button>
                 </div>
               </div>
             )}
+            {activeSection === "settings" && (
+              <SettingsPanel changePin={changePin} />
+            )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SETTINGS PANEL (inside Admin Portal)
+// ============================================================
+function SettingsPanel({ changePin }) {
+  const { adminPin, dbStatus } = useAdmin();
+  const [currentPin, setCurrentPin]  = useState("");
+  const [newPin, setNewPin]          = useState("");
+  const [confirmPin, setConfirmPin]  = useState("");
+  const [pinMsg, setPinMsg]          = useState({ text: "", ok: true });
+
+  const inp = (val, set, placeholder, maxLen = 4) => (
+    <input
+      type="password" value={val} onChange={e => set(e.target.value.replace(/\D/g, ""))}
+      placeholder={placeholder} maxLength={maxLen}
+      style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "12px 16px", color: "white", outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "1.2rem", letterSpacing: "0.4em", textAlign: "center", transition: "border-color 0.2s" }}
+      onFocus={e => e.target.style.borderColor = S.purple}
+      onBlur={e => e.target.style.borderColor = "#333"}
+    />
+  );
+
+  const handlePinChange = () => {
+    if (currentPin !== adminPin)             { setPinMsg({ text: "Current PIN is incorrect.", ok: false }); return; }
+    if (!/^\d{4}$/.test(newPin))             { setPinMsg({ text: "New PIN must be exactly 4 digits.", ok: false }); return; }
+    if (newPin !== confirmPin)               { setPinMsg({ text: "PINs do not match.", ok: false }); return; }
+    changePin(newPin);
+    setCurrentPin(""); setNewPin(""); setConfirmPin("");
+    setPinMsg({ text: "✓ PIN changed successfully!", ok: true });
+    setTimeout(() => setPinMsg({ text: "", ok: true }), 3000);
+  };
+
+  return (
+    <div>
+      <h3 style={{ color: "white", fontWeight: 700, marginBottom: 24, fontFamily: "'Kanit', sans-serif", fontSize: "1.1rem" }}>Settings</h3>
+
+      {/* Change PIN */}
+      <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 16, padding: "24px", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+          <div style={{ width: 36, height: 36, background: "rgba(168,85,247,0.12)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Key size={16} color={S.purple} />
+          </div>
+          <div>
+            <p style={{ color: "white", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Kanit', sans-serif" }}>Change Admin PIN</p>
+            <p style={{ color: "#666", fontSize: "0.78rem" }}>Your PIN is stored locally in this browser</p>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginBottom: 16 }}>
+          <div>
+            <label style={{ display: "block", color: "#888", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Current PIN</label>
+            {inp(currentPin, setCurrentPin, "••••")}
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#888", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>New PIN</label>
+            {inp(newPin, setNewPin, "••••")}
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#888", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Confirm New PIN</label>
+            {inp(confirmPin, setConfirmPin, "••••")}
+          </div>
+        </div>
+        {pinMsg.text && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, marginBottom: 12, background: pinMsg.ok ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${pinMsg.ok ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}` }}>
+            {pinMsg.ok ? <CheckCircle size={14} color="#10b981" /> : <AlertCircle size={14} color="#ef4444" />}
+            <span style={{ color: pinMsg.ok ? "#10b981" : "#ef4444", fontSize: "0.82rem" }}>{pinMsg.text}</span>
+          </div>
+        )}
+        <button onClick={handlePinChange}
+          style={{ display: "flex", alignItems: "center", gap: 8, background: S.purple, border: "none", borderRadius: 10, padding: "11px 20px", color: "white", fontWeight: 700, cursor: "pointer", fontSize: "0.82rem", fontFamily: "'Kanit', sans-serif" }}>
+          <Key size={14} /> Update PIN
+        </button>
       </div>
     </div>
   );
@@ -1183,78 +1421,128 @@ function HeroSection() {
     return () => clearInterval(t);
   }, [taglines]);
 
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 600], [0, 120]);
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+
+  const marqueeItems = ["React", "Node.js", "MongoDB", "AI / LLMs", "Framer Motion", "TypeScript", "OpenAI", "Next.js", "Docker", "LangChain", "Tailwind CSS", "Express"];
+
   return (
     <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", background: S.dark }}>
-      {/* Ambient glow */}
-      <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: "80vw", height: "80vw", maxWidth: 900, background: "radial-gradient(ellipse, rgba(168,85,247,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+      {/* Floating particles */}
+      <ParticlesBg count={22} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "140px clamp(20px,4vw,60px) clamp(40px,6vw,80px)", position: "relative", zIndex: 10, textAlign: "center" }}>
+      {/* Ambient glow orbs */}
+      <motion.div style={{ y: heroY, position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: "90vw", height: "90vw", maxWidth: 1000, background: "radial-gradient(ellipse, rgba(168,85,247,0.07) 0%, transparent 65%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "60%", left: "10%", width: 300, height: 300, background: "radial-gradient(circle, rgba(34,211,238,0.05) 0%, transparent 70%)", pointerEvents: "none", borderRadius: "50%" }} />
+      <div style={{ position: "absolute", top: "30%", right: "5%", width: 200, height: 200, background: "radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)", pointerEvents: "none", borderRadius: "50%" }} />
+
+      {/* Grid overlay */}
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)", backgroundSize: "60px 60px", pointerEvents: "none" }} />
+
+      <motion.div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "140px clamp(20px,4vw,60px) clamp(40px,6vw,80px)", position: "relative", zIndex: 10, textAlign: "center", opacity: heroOpacity }}>
         {/* Badge */}
-        <FadeIn delay={0} y={-20}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 9999, padding: "6px 16px", marginBottom: 32 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: S.purple, boxShadow: `0 0 8px ${S.purple}` }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+        >
+          <div className="glow-pulse" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.35)", borderRadius: 9999, padding: "6px 16px", marginBottom: 32 }}>
+            <motion.div
+              animate={{ scale: [1, 1.4, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ width: 6, height: 6, borderRadius: "50%", background: S.purple }}
+            />
             <span style={{ color: S.purple, fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em" }}>Available for opportunities</span>
           </div>
-        </FadeIn>
+        </motion.div>
 
-        {/* Main heading */}
-        <FadeIn delay={0.15} y={40}>
+        {/* Main heading — letters animate in */}
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+        >
           <h1 className="hero-heading" style={{
             fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em",
             lineHeight: 1, fontSize: "clamp(3.5rem, 14vw, 160px)", marginBottom: 8,
           }}>
             {data.personalInfo.name}
           </h1>
-        </FadeIn>
+        </motion.div>
 
-        <FadeIn delay={0.25} y={20}>
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+        >
           <p style={{ color: "#888", fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.2em", fontSize: "clamp(0.75rem,1.5vw,1.1rem)", marginBottom: 24 }}>
-            {data.personalInfo.role}
+            <Typewriter text={data.personalInfo.role} speed={60} />
           </p>
-        </FadeIn>
+        </motion.div>
 
         {/* Rotating tagline */}
-        <FadeIn delay={0.35} y={20}>
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.6 }}
+        >
           <div className="hero-tagline-container">
             <AnimatePresence mode="wait">
               <motion.p
                 key={taglineIdx}
-                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
+                initial={{ y: 24, opacity: 0, x: 20 }}
+                animate={{ y: 0, opacity: 1, x: 0 }}
+                exit={{ y: -24, opacity: 0, x: -20 }}
+                transition={{ duration: 0.5 }}
                 className="hero-tagline"
               >{taglines[taglineIdx]}</motion.p>
             </AnimatePresence>
           </div>
-        </FadeIn>
+        </motion.div>
 
         {/* CTA buttons */}
-        <FadeIn delay={0.5} y={20}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.8 }}
+        >
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
-            <ContactBtn />
-            <a href={data.personalInfo.github} target="_blank" rel="noopener noreferrer" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              border: "2px solid rgba(215,226,234,0.25)", borderRadius: 9999,
-              padding: "clamp(10px,1.2vw,14px) clamp(28px,3vw,48px)",
-              color: S.text, fontFamily: "'Kanit', sans-serif", fontWeight: 500,
-              textTransform: "uppercase", letterSpacing: "0.1em",
-              fontSize: "clamp(0.7rem,0.9vw,0.95rem)", transition: "all 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(215,226,234,0.5)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(215,226,234,0.25)"}
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+              <ContactBtn />
+            </motion.div>
+            <motion.a
+              href={data.personalInfo.github} target="_blank" rel="noopener noreferrer"
+              whileHover={{ scale: 1.04, borderColor: "rgba(215,226,234,0.6)" }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                border: "2px solid rgba(215,226,234,0.25)", borderRadius: 9999,
+                padding: "clamp(10px,1.2vw,14px) clamp(28px,3vw,48px)",
+                color: S.text, fontFamily: "'Kanit', sans-serif", fontWeight: 500,
+                textTransform: "uppercase", letterSpacing: "0.1em",
+                fontSize: "clamp(0.7rem,0.9vw,0.95rem)",
+              }}
             >
               <Github size={16} /> GitHub
-            </a>
+            </motion.a>
           </div>
-        </FadeIn>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
           style={{ position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
         >
-          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} style={{ color: S.cyan }}>
+          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1.8, repeat: Infinity }} style={{ color: S.cyan }}>
             <ChevronDown size={22} />
           </motion.div>
         </motion.div>
+      </motion.div>
+
+      {/* Marquee ticker */}
+      <div style={{ position: "relative", zIndex: 10 }}>
+        <MarqueeTicker items={marqueeItems} />
       </div>
 
       {/* Description strip */}
@@ -1268,6 +1556,8 @@ function HeroSection() {
           alignItems: "center",
           gap: 20,
           textAlign: "center",
+          position: "relative",
+          zIndex: 10,
         }}>
           <p style={{
             color: S.text,
@@ -1281,19 +1571,19 @@ function HeroSection() {
             {data.personalInfo.heroDescription}
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            {data.socialLinks.map(link => (
-              <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer"
+            {data.socialLinks.map((link, idx) => (
+              <motion.a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * idx, duration: 0.5 }}
+                whileHover={{ scale: 1.15, y: -4 }}
                 style={{
-                  width: 44,
-                  height: 44,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  width: 44, height: 44,
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(215,226,234,0.12)",
-                  borderRadius: 12,
-                  color: S.text,
-                  opacity: 0.6,
+                  borderRadius: 12, color: S.text, opacity: 0.6,
                   transition: "all 0.3s ease",
                 }}
                 onMouseEnter={e => {
@@ -1310,7 +1600,7 @@ function HeroSection() {
                 }}
               >
                 <link.icon size={18} />
-              </a>
+              </motion.a>
             ))}
           </div>
         </div>
@@ -1330,19 +1620,25 @@ function AboutSection() {
     { label: "Journey Milestones", value: data.journey.length },
   ];
   return (
-    <section id="about" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
+    <section id="about" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
+      {/* Glow orb */}
+      <div style={{ position: "absolute", bottom: "10%", right: "-10%", width: 400, height: 400, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none", borderRadius: "50%" }} />
+
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>About Me</SectionHeading>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "clamp(32px,4vw,64px)", alignItems: "center" }}>
-          {/* Profile card */}
-          <FadeIn delay={0.1} x={-40} y={0}>
-            <GlassCard style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 440px), 1fr))", gap: "clamp(32px,4vw,64px)", alignItems: "center" }}>
+          {/* Profile card — slides from left */}
+          <SlideLeft delay={0.1}>
+            <GlassCard style={{ display: "flex", flexDirection: "column", gap: 24 }} className="glow-card">
               <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, rgba(168,85,247,0.3), rgba(34,211,238,0.3))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <motion.div
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                  style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, rgba(168,85,247,0.3), rgba(34,211,238,0.3))", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "default" }}
+                >
                   <span style={{ color: "white", fontWeight: 900, fontSize: "1.6rem", fontFamily: "'Kanit', sans-serif" }}>NR</span>
-                </div>
+                </motion.div>
                 <div>
                   <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.2rem,2vw,1.8rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 4 }}>{data.personalInfo.name}</h3>
                   <p style={{ color: S.cyan, fontWeight: 500, fontSize: "0.9rem" }}>{data.personalInfo.role}</p>
@@ -1351,29 +1647,35 @@ function AboutSection() {
               <p style={{ color: "#888", lineHeight: 1.7, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>{data.personalInfo.heroDescription}</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {[{ label: data.personalInfo.email, icon: Mail, href: `mailto:${data.personalInfo.email}` }, { label: data.personalInfo.location, icon: MapPin, href: "#" }].map(item => (
-                  <a key={item.label} href={item.href} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#888", fontSize: "0.82rem", transition: "color 0.2s" }}
+                  <motion.a key={item.label} href={item.href} whileHover={{ scale: 1.04, y: -2 }} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#888", fontSize: "0.82rem", transition: "color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#888"}>
                     <item.icon size={14} />{item.label}
-                  </a>
+                  </motion.a>
                 ))}
               </div>
             </GlassCard>
-          </FadeIn>
+          </SlideLeft>
 
-          {/* Stats */}
-          <FadeIn delay={0.2} x={0} y={30}>
+          {/* Stats — slide from right with animated counters */}
+          <SlideRight delay={0.2}>
             <div className="stats-grid">
               {stats.map((stat, i) => (
                 <motion.div key={stat.label}
-                  initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }} viewport={{ once: true }}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(20px,2vw,32px)", textAlign: "center" }}
+                  initial={{ opacity: 0, y: 40, scale: 0.85 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.2 + i * 0.12, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+                  viewport={{ once: true }}
+                  whileHover={{ scale: 1.06, y: -6, boxShadow: "0 16px 40px rgba(168,85,247,0.15)" }}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(20px,2vw,32px)", textAlign: "center", cursor: "default" }}
                 >
-                  <div style={{ color: "white", fontWeight: 900, fontSize: "clamp(2rem,4vw,3.5rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ color: "white", fontWeight: 900, fontSize: "clamp(2rem,4vw,3.5rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1 }}>
+                    <AnimatedCounter target={stat.value} />
+                  </div>
                   <div style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 8 }}>{stat.label}</div>
                 </motion.div>
               ))}
             </div>
-          </FadeIn>
+          </SlideRight>
         </div>
       </div>
     </section>
@@ -1386,39 +1688,63 @@ function AboutSection() {
 function EducationSection() {
   const { data } = useAdmin();
   return (
-    <section id="education" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <section id="education" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "50%", left: "-5%", width: 300, height: 300, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none", borderRadius: "50%" }} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>Education</SectionHeading>
         </FadeIn>
         {data.education.map((edu, i) => (
-          <FadeIn key={i} delay={i * 0.1} y={30}>
-            <GlassCard style={{ marginBottom: 24, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: 200, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                    <div className="glass" style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: S.cyan, flexShrink: 0 }}>
-                      <GraduationCap size={18} />
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: i % 2 === 0 ? -70 : 70 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.7, delay: i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <motion.div whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(34,211,238,0.08)" }} transition={{ duration: 0.3 }}>
+              <GlassCard style={{ marginBottom: 24, position: "relative", overflow: "hidden" }} className="glow-card">
+                <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: 200, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                      <motion.div whileHover={{ rotate: 15, scale: 1.1 }} className="glass" style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: S.cyan, flexShrink: 0, cursor: "default" }}>
+                        <GraduationCap size={18} />
+                      </motion.div>
+                      <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,2vw,1.7rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2 }}>{edu.degree}</h3>
                     </div>
-                    <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,2vw,1.7rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2 }}>{edu.degree}</h3>
+                    <p style={{ color: "#888", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.85rem" }}>{edu.college}</p>
                   </div>
-                  <p style={{ color: "#888", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.85rem" }}>{edu.college}</p>
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 + 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="glass"
+                    style={{ padding: "6px 16px", borderRadius: 9999, color: "#888", fontSize: "0.8rem", fontFamily: "monospace", whiteSpace: "nowrap" }}
+                  >{edu.duration}</motion.span>
                 </div>
-                <span className="glass" style={{ padding: "6px 16px", borderRadius: 9999, color: "#888", fontSize: "0.8rem", fontFamily: "monospace", whiteSpace: "nowrap" }}>{edu.duration}</span>
-              </div>
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 20 }}>
-                <p style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Sparkles size={12} /> Focused On
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {(edu.focus || []).map(item => (
-                    <span key={item} className="glass" style={{ padding: "6px 14px", borderRadius: 9999, fontSize: "0.8rem", color: "#aaa" }}>{item}</span>
-                  ))}
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 20 }}>
+                  <p style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Sparkles size={12} /> Focused On
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {(edu.focus || []).map((item, fi) => (
+                      <motion.span key={item}
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 + 0.2 + fi * 0.06, ease: [0.34, 1.56, 0.64, 1] }}
+                        whileHover={{ scale: 1.08, y: -3 }}
+                        className="glass"
+                        style={{ padding: "6px 14px", borderRadius: 9999, fontSize: "0.8rem", color: "#aaa", cursor: "default" }}
+                      >{item}</motion.span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </GlassCard>
-          </FadeIn>
+              </GlassCard>
+            </motion.div>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -1431,8 +1757,9 @@ function EducationSection() {
 function ProjectsSection() {
   const { data } = useAdmin();
   return (
-    <section id="projects" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <section id="projects" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
+      <ParticlesBg count={10} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ marginBottom: "clamp(48px,6vw,96px)", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
           <SectionHeading>Projects</SectionHeading>
           <p style={{ color: "#666", maxWidth: 500, textAlign: "center", lineHeight: 1.6, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>
@@ -1442,39 +1769,56 @@ function ProjectsSection() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 480px), 1fr))", gap: "clamp(16px,2vw,32px)" }}>
           {data.projects.map((project, i) => {
             const Icon = project.icon || Briefcase;
+            const fromLeft = i % 2 === 0;
             return (
-              <FadeIn key={project.id || i} delay={i * 0.08} y={30}>
+              <motion.div
+                key={project.id || i}
+                initial={{ opacity: 0, x: fromLeft ? -60 : 60, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.7, delay: i * 0.06, ease: [0.25, 0.1, 0.25, 1] }}
+              >
                 <motion.div
-                  whileHover={{ y: -8, boxShadow: "0 24px 48px rgba(0,0,0,0.4), 0 0 20px rgba(168,85,247,0.1)" }}
+                  whileHover={{ y: -10, rotateX: 2, rotateY: fromLeft ? -2 : 2, boxShadow: "0 28px 60px rgba(0,0,0,0.5), 0 0 30px rgba(168,85,247,0.12)" }}
                   transition={{ duration: 0.3 }}
-                  className="glass"
-                  style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%" }}
+                  className="glass glow-card"
+                  style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%", transformStyle: "preserve-3d" }}
                 >
                   <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, aspectRatio: "16/9" }}>
                     {project.image && <img src={project.image} alt={project.title} className="project-image" />}
+                    {/* Scan line on image */}
+                    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 20, pointerEvents: "none" }}>
+                      <div className="scan-line" />
+                    </div>
                     <div style={{ position: "absolute", bottom: 12, left: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(project.tech || []).map(t => (
-                        <span key={t} style={{ padding: "4px 10px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 9999, fontSize: "0.68rem", color: "white", border: "1px solid rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t}</span>
+                      {(project.tech || []).map((t, ti) => (
+                        <motion.span key={t}
+                          initial={{ opacity: 0, scale: 0.7 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.1 + ti * 0.05 }}
+                          viewport={{ once: true }}
+                          style={{ padding: "4px 10px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 9999, fontSize: "0.68rem", color: "white", border: "1px solid rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                        >{t}</motion.span>
                       ))}
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <div style={{ padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 12, color: S.purple }}>
+                    <motion.div whileHover={{ rotate: 15, scale: 1.2 }} style={{ padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 12, color: S.purple, cursor: "default" }}>
                       <Icon size={22} />
-                    </div>
+                    </motion.div>
                     <div style={{ display: "flex", gap: 8 }}>
                       {[{ icon: Github, href: project.github }, { icon: ExternalLink, href: project.live }].map(({ icon: BtnIcon, href }) => (
-                        <a key={href || "#"} href={href || "#"} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
+                        <motion.a key={href || "#"} href={href || "#"} whileHover={{ scale: 1.15, y: -3 }} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
                           onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#666"}>
                           <BtnIcon size={16} />
-                        </a>
+                        </motion.a>
                       ))}
                     </div>
                   </div>
                   <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,1.8vw,1.5rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 10 }}>{project.title}</h3>
                   <p style={{ color: "#888", lineHeight: 1.6, fontSize: "clamp(0.82rem,1.1vw,0.95rem)", flex: 1 }}>{project.description}</p>
                 </motion.div>
-              </FadeIn>
+              </motion.div>
             );
           })}
         </div>
@@ -1489,35 +1833,54 @@ function ProjectsSection() {
 function SkillsSection() {
   const { data } = useAdmin();
   return (
-    <section id="skills" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <section id="skills" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70vw", height: "70vw", maxWidth: 700, background: "radial-gradient(ellipse, rgba(168,85,247,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>Skills</SectionHeading>
           <p style={{ color: "#666", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>A specialized toolkit forged through intensive building and experimentation.</p>
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
-          {Object.entries(data.skills).map(([category, skillList], idx) => (
-            <FadeIn key={category} delay={idx * 0.08} y={30}>
+          {Object.entries(data.skills).map(([category, skillList], idx) => {
+            const fromLeft = idx % 2 === 0;
+            return (
               <motion.div
-                whileHover={{ borderColor: "rgba(255,255,255,0.2)", y: -4 }}
-                transition={{ duration: 0.3 }}
-                className="glass"
-                style={{ borderRadius: 32, padding: "clamp(24px,2.5vw,40px)", position: "relative", overflow: "hidden" }}
+                key={category}
+                initial={{ opacity: 0, x: fromLeft ? -60 : 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.65, delay: idx * 0.07, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "rgba(34,211,238,0.05)", borderRadius: "50%", filter: "blur(20px)" }} />
-                <h3 style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700, marginBottom: 24 }}>{category}</h3>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {skillList.map((skill, i) => (
-                    <motion.span key={skill.name}
-                      initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.15 + i * 0.04 }} viewport={{ once: true }}
-                      whileHover={{ scale: 1.06, y: -3, borderColor: "rgba(34,211,238,0.5)", background: "rgba(34,211,238,0.08)" }}
-                      style={{ padding: "8px 14px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: "0.8rem", fontWeight: 600, color: "#aaa", cursor: "default", display: "inline-block", transition: "all 0.2s" }}
-                    >{skill.name}</motion.span>
-                  ))}
-                </div>
+                <motion.div
+                  whileHover={{ borderColor: "rgba(255,255,255,0.22)", y: -6, boxShadow: "0 20px 40px rgba(34,211,238,0.08)" }}
+                  transition={{ duration: 0.3 }}
+                  className="glass"
+                  style={{ borderRadius: 32, padding: "clamp(24px,2.5vw,40px)", position: "relative", overflow: "hidden", height: "100%" }}
+                >
+                  <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "rgba(34,211,238,0.05)", borderRadius: "50%", filter: "blur(20px)" }} />
+                  <motion.h3
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.07 + 0.2 }}
+                    style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700, marginBottom: 24 }}
+                  >{category}</motion.h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {skillList.map((skill, i) => (
+                      <motion.span key={skill.name}
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: idx * 0.07 + 0.15 + i * 0.045, ease: [0.34, 1.56, 0.64, 1] }}
+                        viewport={{ once: true }}
+                        whileHover={{ scale: 1.1, y: -4, borderColor: "rgba(34,211,238,0.6)", background: "rgba(34,211,238,0.1)", color: "white" }}
+                        style={{ padding: "8px 14px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: "0.8rem", fontWeight: 600, color: "#aaa", cursor: "default", display: "inline-block" }}
+                      >{skill.name}</motion.span>
+                    ))}
+                  </div>
+                </motion.div>
               </motion.div>
-            </FadeIn>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1530,37 +1893,84 @@ function SkillsSection() {
 function JourneySection() {
   const { data } = useAdmin();
   return (
-    <section id="journey" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <section id="journey" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
+      <ParticlesBg count={8} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>My Evolution</SectionHeading>
           <p style={{ color: "#666", marginTop: 16, textAlign: "center", fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>Tracing the path from interest to innovation.</p>
         </FadeIn>
         <div style={{ position: "relative", marginLeft: "clamp(16px,4vw,48px)", paddingLeft: 2 }}>
-          <div style={{ position: "absolute", left: -1, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary), transparent)" }} />
+          {/* Animated timeline line */}
+          <motion.div
+            initial={{ scaleY: 0, originY: 0 }}
+            whileInView={{ scaleY: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            style={{ position: "absolute", left: -1, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, #a855f7, #22d3ee, transparent)", transformOrigin: "top" }}
+          />
           {data.journey.map((item, i) => {
             const Icon = item.icon || Cpu;
             return (
-              <FadeIn key={i} delay={i * 0.1} x={-20} y={0}>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: i % 2 === 0 ? -60 : 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.7, delay: i * 0.12, ease: [0.25, 0.1, 0.25, 1] }}
+              >
                 <div style={{ position: "relative", paddingLeft: "clamp(28px,4vw,56px)", marginBottom: "clamp(28px,4vw,56px)" }}>
-                  <div style={{ position: "absolute", left: -9, top: 4, width: 16, height: 16, background: S.dark, border: "2px solid var(--accent-secondary)", borderRadius: "50%", boxShadow: "0 0 15px var(--accent-secondary)", zIndex: 1 }} />
-                  <GlassCard style={{ position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: 0, right: 0, opacity: 0.05 }}>
-                      <Icon size={120} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
-                      <div>
-                        <span style={{ display: "block", color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>{item.company}</span>
-                        <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1rem,2vw,1.5rem)", fontFamily: "'Kanit', sans-serif", textTransform: "uppercase" }}>{item.role}</h3>
+                  {/* Animated dot */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.12 + 0.3, ease: [0.34, 1.56, 0.64, 1], duration: 0.5 }}
+                    animate={{ boxShadow: ["0 0 8px rgba(34,211,238,0.4)", "0 0 20px rgba(34,211,238,0.8)", "0 0 8px rgba(34,211,238,0.4)"] }}
+                    // @ts-ignore
+                    transition2={{ duration: 2, repeat: Infinity }}
+                    style={{ position: "absolute", left: -9, top: 4, width: 16, height: 16, background: S.dark, border: "2px solid #22d3ee", borderRadius: "50%", boxShadow: "0 0 15px #22d3ee", zIndex: 1 }}
+                  />
+                  <motion.div
+                    whileHover={{ y: -6, boxShadow: "0 20px 40px rgba(168,85,247,0.12)" }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <GlassCard style={{ position: "relative", overflow: "hidden" }} className="glow-card">
+                      <div style={{ position: "absolute", top: 0, right: 0, opacity: 0.04 }}>
+                        <Icon size={140} />
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, color: S.cyan, fontSize: "0.82rem", background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 9999, padding: "4px 12px", whiteSpace: "nowrap" }}>
-                        <Calendar size={12} />{item.duration}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+                        <div>
+                          <motion.span
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.12 + 0.25 }}
+                            style={{ display: "block", color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}
+                          >{item.company}</motion.span>
+                          <motion.h3
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.12 + 0.35 }}
+                            style={{ color: "white", fontWeight: 700, fontSize: "clamp(1rem,2vw,1.5rem)", fontFamily: "'Kanit', sans-serif", textTransform: "uppercase" }}
+                          >{item.role}</motion.h3>
+                        </div>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.7 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.12 + 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                          style={{ display: "flex", alignItems: "center", gap: 6, color: S.cyan, fontSize: "0.82rem", background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 9999, padding: "4px 12px", whiteSpace: "nowrap" }}
+                        >
+                          <Calendar size={12} />{item.duration}
+                        </motion.div>
                       </div>
-                    </div>
-                    <p style={{ color: "#888", lineHeight: 1.7, fontSize: "clamp(0.85rem,1.1vw,1rem)" }}>{item.description}</p>
-                  </GlassCard>
+                      <p style={{ color: "#888", lineHeight: 1.7, fontSize: "clamp(0.85rem,1.1vw,1rem)" }}>{item.description}</p>
+                    </GlassCard>
+                  </motion.div>
                 </div>
-              </FadeIn>
+              </motion.div>
             );
           })}
         </div>
@@ -1619,7 +2029,7 @@ function GitHubSection() {
               ))}
               <a href={stats.username ? `https://github.com/${stats.username}` : (data.personalInfo.github || "#")} target="_blank" rel="noopener noreferrer"
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "white", color: "black", borderRadius: 16, padding: "14px", fontWeight: 700, textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "0.1em", transition: "background 0.2s", textDecoration: "none" }}
-                onMouseEnter={e => e.currentTarget.style.background = S.cyan}
+                onMouseEnter={e => e.currentTarget.style.background = "#22d3ee"}
                 onMouseLeave={e => e.currentTarget.style.background = "white"}
               ><Github size={16} /> Visit Profile</a>
             </GlassCard>
@@ -1668,6 +2078,8 @@ function WhatIBuildSection() {
       borderRadius: "clamp(40px,5vw,60px) clamp(40px,5vw,60px) 0 0",
       padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
       marginTop: -1,
+      position: "relative",
+      overflow: "hidden",
     }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
@@ -1679,20 +2091,30 @@ function WhatIBuildSection() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
           {data.whatIBuild.map((service, i) => {
             const Icon = service.icon || Code2;
+            const fromLeft = i % 2 === 0;
             return (
-              <FadeIn key={service.title} delay={i * 0.1} y={30}>
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, x: fromLeft ? -50 : 50, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ duration: 0.6, delay: i * 0.09, ease: [0.25, 0.1, 0.25, 1] }}
+              >
                 <motion.div
-                  whileHover={{ y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+                  whileHover={{ y: -10, boxShadow: `0 20px 40px rgba(0,0,0,0.12), 0 0 0 2px ${service.color || "#a855f7"}33` }}
                   transition={{ duration: 0.3 }}
                   style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 24, padding: "clamp(24px,2.5vw,40px)", height: "100%" }}
                 >
-                  <div style={{ marginBottom: 20, padding: 14, display: "inline-block", background: "rgba(0,0,0,0.04)", borderRadius: 16, color: service.color || S.purple }}>
+                  <motion.div
+                    whileHover={{ rotate: 15, scale: 1.15 }}
+                    style={{ marginBottom: 20, padding: 14, display: "inline-block", background: "rgba(0,0,0,0.04)", borderRadius: 16, color: service.color || S.purple, cursor: "default" }}
+                  >
                     <Icon size={28} />
-                  </div>
+                  </motion.div>
                   <h3 style={{ color: "#0C0C0C", fontWeight: 700, fontSize: "clamp(1rem,1.8vw,1.3rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 12 }}>{service.title}</h3>
                   <p style={{ color: "#666", lineHeight: 1.6, fontSize: "clamp(0.82rem,1.1vw,0.95rem)" }}>{service.description}</p>
                 </motion.div>
-              </FadeIn>
+              </motion.div>
             );
           })}
         </div>
@@ -1711,7 +2133,7 @@ function CertificationsSection() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn delay={0} y={40} style={{ marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading gradient={false} light>Certifications</SectionHeading>
-          <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))", borderRadius: 9999, margin: "16px auto 0" }} />
+          <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, #a855f7, #22d3ee)", borderRadius: 9999, margin: "16px auto 0" }} />
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
           {data.certifications.map((cert, i) => (
@@ -1748,79 +2170,182 @@ function CertificationsSection() {
 }
 
 // ============================================================
-// CONTACT SECTION  (dark bg, rounded top)
+// CONTACT SECTION
 // ============================================================
 function ContactSection() {
   const { data } = useAdmin();
+  const [form, setForm]   = useState({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState("idle"); // idle | sent
+  const [errMsg, setErrMsg] = useState("");
+
+  const adminEmail = ADMIN_EMAIL || data.personalInfo.email || "";
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      setErrMsg("Please fill in all fields."); return;
+    }
+    setErrMsg("");
+    // Opens Gmail compose in new tab with all fields pre-filled
+    const result = sendEmail({ from_name: form.name, from_email: form.email, message: form.message });
+    if (result.ok) {
+      setStatus("sent");
+      setForm({ name: "", email: "", message: "" });
+      setTimeout(() => setStatus("idle"), 4000);
+    }
+  };
+
   return (
     <section id="contact" style={{
       background: S.dark,
       borderRadius: "clamp(40px,5vw,60px) clamp(40px,5vw,60px) 0 0",
       padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
+      position: "relative", overflow: "hidden",
     }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <ParticlesBg count={12} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>Contact</SectionHeading>
           <p style={{ color: "#666", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>Let's build the future together.</p>
         </FadeIn>
         <GlassCard style={{ position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, background: "radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: "clamp(32px,4vw,64px)", position: "relative" }}>
-            {/* Info */}
-            <div>
-              <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.5rem,3vw,3rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2, marginBottom: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "clamp(32px,4vw,64px)", position: "relative" }}>
+
+            {/* ── Info panel — slides from left ── */}
+            <SlideLeft delay={0.1}>
+              <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.4rem,3vw,2.8rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2, marginBottom: 28 }}>
                 Let's Build <br /><span className="text-gradient">The Future</span>
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
-                {[{ icon: Mail, label: "Email Me", value: data.personalInfo.email, href: `mailto:${data.personalInfo.email}` }, { icon: MapPin, label: "Location", value: data.personalInfo.location, href: "#" }].map(item => (
-                  <a key={item.label} href={item.href} style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}>
-                    <div className="glass" style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", flexShrink: 0, transition: "color 0.2s" }}
-                      onMouseEnter={e => e.currentTarget.style.color = S.purple}
-                      onMouseLeave={e => e.currentTarget.style.color = "#888"}
-                    >
-                      <item.icon size={20} />
-                    </div>
-                    <div>
-                      <p style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>{item.label}</p>
-                      <p style={{ color: "white", fontWeight: 500, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>{item.value}</p>
-                    </div>
-                  </a>
-                ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 28 }}>
+                {/* Email — clicking opens Gmail compose */}
+                <motion.a
+                  href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  whileHover={{ x: 4 }}
+                  style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}
+                >
+                  <motion.div whileHover={{ scale: 1.15, rotate: -8 }} className="glass"
+                    style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: S.purple, flexShrink: 0 }}>
+                    <Mail size={20} />
+                  </motion.div>
+                  <div>
+                    <p style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>Email Me</p>
+                    <p style={{ color: "white", fontWeight: 500, fontSize: "clamp(0.82rem,1.1vw,0.95rem)", wordBreak: "break-all" }}>{adminEmail}</p>
+                  </div>
+                </motion.a>
+                <motion.div whileHover={{ x: 4 }} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div className="glass" style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", flexShrink: 0 }}>
+                    <MapPin size={20} />
+                  </div>
+                  <div>
+                    <p style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>Location</p>
+                    <p style={{ color: "white", fontWeight: 500, fontSize: "clamp(0.82rem,1.1vw,0.95rem)" }}>{data.personalInfo.location}</p>
+                  </div>
+                </motion.div>
               </div>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {data.socialLinks.slice(0, 3).map(social => (
-                  <motion.a key={social.name} whileHover={{ y: -5, scale: 1.1 }} href={social.href} target="_blank" rel="noopener noreferrer"
+                  <motion.a key={social.name} whileHover={{ y: -5, scale: 1.1 }}
+                    href={social.href} target="_blank" rel="noopener noreferrer"
                     className="glass"
-                    style={{ width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", transition: "color 0.2s" }}
+                    style={{ width: 46, height: 46, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", transition: "color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.color = S.cyan}
                     onMouseLeave={e => e.currentTarget.style.color = "#888"}
                   ><social.icon size={20} /></motion.a>
                 ))}
               </div>
-            </div>
+            </SlideLeft>
 
-            {/* Form */}
-            <motion.form initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} onSubmit={e => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {[{ label: "Full Name", placeholder: "John Doe", type: "text" }, { label: "Email Address", placeholder: "john@example.com", type: "email" }].map(f => (
-                <div key={f.label}>
-                  <label style={{ display: "block", color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>{f.label}</label>
-                  <input type={f.type} placeholder={f.placeholder} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 20px", color: "white", outline: "none", fontSize: "0.95rem", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.4)"}
+            {/* ── Form — slides from right ── */}
+            <SlideRight delay={0.2}>
+              <motion.form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Name + Email row */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14 }}>
+                  {[
+                    { key: "name",  label: "Full Name",     placeholder: "Your Name",       type: "text"  },
+                    { key: "email", label: "Email Address", placeholder: "you@example.com", type: "email" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ display: "block", color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 7 }}>{f.label}</label>
+                      <input
+                        type={f.type}
+                        placeholder={f.placeholder}
+                        value={form[f.key]}
+                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                        style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 18px", color: "white", outline: "none", fontSize: "16px", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s" }}
+                        onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.5)"}
+                        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label style={{ display: "block", color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 7 }}>Your Message</label>
+                  <textarea
+                    placeholder="How can I help you today?"
+                    rows={4}
+                    value={form.message}
+                    onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
+                    style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 18px", color: "white", outline: "none", fontSize: "16px", resize: "vertical", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s", minHeight: 120 }}
+                    onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.5)"}
                     onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
                   />
                 </div>
-              ))}
-              <div>
-                <label style={{ display: "block", color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>Your Message</label>
-                <textarea placeholder="How can I help you today?" rows={5} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 20px", color: "white", outline: "none", fontSize: "0.95rem", resize: "none", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s" }}
-                  onFocus={e => e.target.style.borderColor = "var(--accent-primary)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-              </div>
-              <motion.button type="submit" whileHover={{ scale: 1.02, boxShadow: "0 0 30px var(--accent-primary)" }} whileTap={{ scale: 0.98 }}
-                style={{ background: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))", border: "none", borderRadius: 16, padding: "16px", color: "white", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", cursor: "pointer", fontFamily: "'Kanit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
-              ><Send size={16} /> Send Transmission</motion.button>
-            </motion.form>
+
+                {/* Validation error */}
+                <AnimatePresence>
+                  {errMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10 }}
+                    >
+                      <AlertCircle size={14} color="#ef4444" />
+                      <span style={{ color: "#ef4444", fontSize: "0.82rem" }}>{errMsg}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── SEND TRANSMISSION button ── */}
+                <motion.button
+                  type="submit"
+                  disabled={status === "sent"}
+                  whileHover={status === "idle" ? { scale: 1.03, y: -2 } : {}}
+                  whileTap={status === "idle" ? { scale: 0.97 } : {}}
+                  style={{
+                    position: "relative", overflow: "hidden",
+                    background: status === "sent"
+                      ? "linear-gradient(135deg, #059669, #10b981)"
+                      : "linear-gradient(135deg, #B600A8 0%, #7621B0 50%, #BE4C00 100%)",
+                    border: "none", borderRadius: 18,
+                    padding: "18px 28px",
+                    color: "white", fontWeight: 800,
+                    textTransform: "uppercase", letterSpacing: "0.15em",
+                    fontSize: "clamp(0.78rem, 1vw, 0.88rem)",
+                    cursor: status === "sent" ? "default" : "pointer",
+                    fontFamily: "'Kanit', sans-serif",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    boxShadow: status === "sent"
+                      ? "0 0 30px rgba(16,185,129,0.4)"
+                      : "0 4px 24px rgba(182,0,168,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                    transition: "box-shadow 0.3s, background 0.3s",
+                  }}
+                >
+                  {/* Shimmer sweep — only on idle */}
+                  {status === "idle" && (
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1.5 }}
+                      style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)", pointerEvents: "none" }}
+                    />
+                  )}
+                  {status === "sent" ? <CheckCircle size={17} /> : <Send size={17} />}
+                  <span>{status === "sent" ? "Redirecting to Gmail…" : "Send Transmission"}</span>
+                </motion.button>
+              </motion.form>
+            </SlideRight>
           </div>
         </GlassCard>
       </div>
@@ -1842,7 +2367,7 @@ function Footer() {
           </div>
           <span style={{ color: "white", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.85rem", fontFamily: "'Kanit', sans-serif" }}>{data.personalInfo.name}</span>
         </div>
-        <p style={{ color: "#666", fontSize: "0.85rem" }}>© 2026 {data.personalInfo.name}. Crafted with AI & Passion.</p>
+        <p style={{ color: "#666", fontSize: "0.85rem" }}>© 2026 {data.personalInfo.name}. All rights reserved.</p>
         <div style={{ display: "flex", gap: 16 }}>
           {data.socialLinks.map(link => (
             <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer"
@@ -1865,18 +2390,28 @@ function AppContent() {
   return (
     <main style={{ background: S.dark, minHeight: "100vh", overflowX: "hidden" }}>
       <style>{GLOBAL_CSS}</style>
+      <CursorGlow />
       <Navbar />
       <PinModal />
       {isAdmin && <AdminPortal />}
       <HeroSection />
+      <GlowDivider />
       <AboutSection />
+      <GlowDivider />
       <EducationSection />
+      <GlowDivider />
       <ProjectsSection />
+      <GlowDivider />
       <SkillsSection />
+      <GlowDivider />
       <JourneySection />
+      <GlowDivider />
       <GitHubSection />
+      <GlowDivider />
       <WhatIBuildSection />
+      <GlowDivider />
       <CertificationsSection />
+      <GlowDivider />
       <ContactSection />
       <Footer />
     </main>
