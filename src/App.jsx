@@ -869,6 +869,44 @@ function PinModal() {
   );
 }
 
+function CommaSeparatedField({ labelText, valueArray, onChange, purpleColor }) {
+  const [tempVal, setTempVal] = useState(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const currentJoined = valueArray ? valueArray.join(", ") : "";
+  const displayVal = isFocused && tempVal !== null ? tempVal : currentJoined;
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", color: "#888", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+        {labelText}
+      </label>
+      <input
+        type="text"
+        value={displayVal}
+        onChange={e => {
+          const val = e.target.value;
+          setTempVal(val);
+          const arr = val.split(",").map(s => s.trim());
+          onChange(arr);
+        }}
+        onFocus={e => {
+          setIsFocused(true);
+          setTempVal(currentJoined);
+          e.target.style.borderColor = purpleColor;
+        }}
+        onBlur={e => {
+          setIsFocused(false);
+          setTempVal(null);
+          e.target.style.borderColor = "#333";
+          const cleaned = displayVal.split(",").map(s => s.trim()).filter(Boolean);
+          onChange(cleaned);
+        }}
+        style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "12px 16px", color: "white", outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "0.9rem" }}
+      />
+    </div>
+  );
+}
+
 // ============================================================
 // ADMIN PORTAL
 // ============================================================
@@ -1008,7 +1046,7 @@ function AdminPortal() {
                     {field("Degree", edu.degree, v => { const n = [...data.education]; n[i] = { ...n[i], degree: v }; updateData("education", n); })}
                     {field("College", edu.college, v => { const n = [...data.education]; n[i] = { ...n[i], college: v }; updateData("education", n); })}
                     {field("Duration", edu.duration, v => { const n = [...data.education]; n[i] = { ...n[i], duration: v }; updateData("education", n); })}
-                    {field("Focus Areas (comma separated)", edu.focus ? edu.focus.join(", ") : "", v => { const n = [...data.education]; n[i] = { ...n[i], focus: v.split(",").map(s => s.trim()).filter(Boolean) }; updateData("education", n); })}
+                    <CommaSeparatedField labelText="Focus Areas (comma separated)" valueArray={edu.focus} onChange={v => { const n = [...data.education]; n[i] = { ...n[i], focus: v }; updateData("education", n); }} purpleColor={S.purple} />
                   </div>, i
                 ))}
                 <button
@@ -1127,7 +1165,7 @@ function AdminPortal() {
                     {field("Title", proj.title, v => { const n = [...data.projects]; n[i] = { ...n[i], title: v }; updateData("projects", n); })}
                     {field("Description", proj.description, v => { const n = [...data.projects]; n[i] = { ...n[i], description: v }; updateData("projects", n); }, "text", 3)}
                     {field("Image URL", proj.image, v => { const n = [...data.projects]; n[i] = { ...n[i], image: v }; updateData("projects", n); })}
-                    {field("Technologies (comma separated)", proj.tech ? proj.tech.join(", ") : "", v => { const n = [...data.projects]; n[i] = { ...n[i], tech: v.split(",").map(s => s.trim()).filter(Boolean) }; updateData("projects", n); })}
+                    <CommaSeparatedField labelText="Technologies (comma separated)" valueArray={proj.tech || []} onChange={v => { const n = [...data.projects]; n[i] = { ...n[i], tech: v }; updateData("projects", n); }} purpleColor={S.purple} />
                     {field("GitHub URL", proj.github, v => { const n = [...data.projects]; n[i] = { ...n[i], github: v }; updateData("projects", n); })}
                     {field("Live URL", proj.live, v => { const n = [...data.projects]; n[i] = { ...n[i], live: v }; updateData("projects", n); })}
                   </div>, proj.id || i
