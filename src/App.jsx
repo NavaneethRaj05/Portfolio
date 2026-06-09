@@ -921,20 +921,18 @@ function AdminPortal() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <h2 style={{ color: "white", fontWeight: 700, fontSize: "1.2rem", fontFamily: "'Kanit', sans-serif" }}>Admin Portal</h2>
-            {/* DB sync indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
-              background: dbStatus === "synced" ? "rgba(16,185,129,0.1)" : dbStatus === "syncing" ? "rgba(168,85,247,0.1)" : dbStatus === "error" ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.06)",
-              border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.3)" : dbStatus === "syncing" ? "rgba(168,85,247,0.3)" : dbStatus === "error" ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.08)"}`,
-              color: dbStatus === "synced" ? "#10b981" : dbStatus === "syncing" ? S.purple : dbStatus === "error" ? "#ef4444" : "#666",
-            }}>
-              {dbStatus === "syncing" && <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw size={10} /></motion.div>}
-              {dbStatus === "synced" && <Database size={10} />}
-              {dbStatus === "error"  && <AlertCircle size={10} />}
-              {dbStatus === "idle"   && <Database size={10} />}
-              <span style={{ marginLeft: 3 }}>
-                {dbStatus === "synced" ? "MongoDB" : dbStatus === "syncing" ? "Syncing…" : dbStatus === "error" ? "DB Offline" : "Local Only"}
-              </span>
-            </div>
+            {/* DB sync indicator — only visible when active */}
+            {(dbStatus === "syncing" || dbStatus === "synced") && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
+                background: dbStatus === "synced" ? "rgba(16,185,129,0.1)" : "rgba(168,85,247,0.1)",
+                border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.3)" : "rgba(168,85,247,0.3)"}`,
+                color: dbStatus === "synced" ? "#10b981" : "#a855f7",
+              }}>
+                {dbStatus === "syncing" && <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw size={10} /></motion.div>}
+                {dbStatus === "synced"  && <Database size={10} />}
+                <span style={{ marginLeft: 3 }}>{dbStatus === "synced" ? "MongoDB ✓" : "Syncing…"}</span>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={saveData} style={{ display: "flex", alignItems: "center", gap: 6, background: saveMsg ? "#059669" : "#059669", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", minWidth: 80, justifyContent: "center" }}>
