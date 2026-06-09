@@ -68,8 +68,8 @@ const GLOBAL_CSS = `
   .particle { position:absolute; border-radius:50%; pointer-events:none; animation: floatUp 4s ease-in-out infinite; }
 
   /* ── Scan line ── */
-  @keyframes scanLine { 0%{top:0%} 100%{top:100%} }
-  .scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(34,211,238,0.4),transparent); animation: scanLine 3s linear infinite; pointer-events:none; }
+  /* scan-line removed */
+  .scan-line { display: none; }
 
   /* ── Border glow on hover ── */
   .glow-card { transition: box-shadow 0.3s, border-color 0.3s; }
@@ -110,8 +110,7 @@ const GLOBAL_CSS = `
   .admin-sidebar { width: 200px; background: rgba(255,255,255,0.02); padding: 16px; border-right: 1px solid rgba(255,255,255,0.04); overflow-y: auto; flex-shrink: 0; }
 
   @media (hover: hover) {
-    .project-image { filter: blur(2px); opacity: 0.5; }
-    .project-image:hover { filter: none; opacity: 1; }
+    .project-image { filter: none; opacity: 1; }
   }
 
   @media (max-width: 768px) {
@@ -334,7 +333,7 @@ function AdminProvider({ children }) {
       setDbStatus("syncing");
       const ok = await mongoSave(clean);
       setDbStatus(ok ? "synced" : "error");
-      setSaveMsg(ok ? "✓ Saved to MongoDB!" : "✓ Saved locally (DB unavailable)");
+      setSaveMsg(ok ? "✓ Saved to MongoDB!" : "Saved locally (DB unavailable)");
     } else {
       setSaveMsg("✓ Saved locally!");
     }
@@ -921,21 +920,26 @@ function AdminPortal() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <h2 style={{ color: "white", fontWeight: 700, fontSize: "1.2rem", fontFamily: "'Kanit', sans-serif" }}>Admin Portal</h2>
-            {/* DB sync indicator — only visible when active */}
-            {(dbStatus === "syncing" || dbStatus === "synced") && (
+            {/* DB sync indicator */}
+            {dbStatus !== "idle" && (
               <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
-                background: dbStatus === "synced" ? "rgba(16,185,129,0.1)" : "rgba(168,85,247,0.1)",
-                border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.3)" : "rgba(168,85,247,0.3)"}`,
-                color: dbStatus === "synced" ? "#10b981" : "#a855f7",
+                background: dbStatus === "synced" ? "rgba(16,185,129,0.1)" : dbStatus === "error" ? "rgba(239,68,68,0.1)" : "rgba(168,85,247,0.1)",
+                border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.3)" : dbStatus === "error" ? "rgba(239,68,68,0.3)" : "rgba(168,85,247,0.3)"}`,
+                color: dbStatus === "synced" ? "#10b981" : dbStatus === "error" ? "#ef4444" : "#a855f7",
               }}>
                 {dbStatus === "syncing" && <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw size={10} /></motion.div>}
                 {dbStatus === "synced"  && <Database size={10} />}
-                <span style={{ marginLeft: 3 }}>{dbStatus === "synced" ? "MongoDB ✓" : "Syncing…"}</span>
+                {dbStatus === "error"   && <AlertCircle size={10} />}
+                <span style={{ marginLeft: 3 }}>
+                  {dbStatus === "synced"  ? "MongoDB ✓" :
+                   dbStatus === "error"   ? "DB Unavailable" :
+                                           "Syncing…"}
+                </span>
               </div>
             )}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={saveData} style={{ display: "flex", alignItems: "center", gap: 6, background: saveMsg ? "#059669" : "#059669", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", minWidth: 80, justifyContent: "center" }}>
+            <button onClick={saveData} style={{ display: "flex", alignItems: "center", gap: 6, background: saveMsg && saveMsg.includes("unavailable") ? "#b45309" : saveMsg ? "#059669" : "#374151", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", minWidth: 80, justifyContent: "center", transition: "background 0.3s" }}>
               <Save size={13} /> {saveMsg || "Save"}
             </button>
             <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "#dc2626", border: "none", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif" }}>
@@ -1361,6 +1365,24 @@ function SettingsPanel({ changePin }) {
     <div>
       <h3 style={{ color: "white", fontWeight: 700, marginBottom: 24, fontFamily: "'Kanit', sans-serif", fontSize: "1.1rem" }}>Settings</h3>
 
+      {/* DB Connection Status */}
+      <div style={{ background: "#1a1a1a", border: `1px solid ${dbStatus === "synced" ? "rgba(16,185,129,0.25)" : dbStatus === "error" ? "rgba(239,68,68,0.25)" : "#2a2a2a"}`, borderRadius: 16, padding: "20px 24px", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, background: dbStatus === "synced" ? "rgba(16,185,129,0.12)" : dbStatus === "error" ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.06)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Database size={16} color={dbStatus === "synced" ? "#10b981" : dbStatus === "error" ? "#ef4444" : "#555"} />
+          </div>
+          <div>
+            <p style={{ color: "white", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Kanit', sans-serif" }}>Database Status</p>
+            <p style={{ color: dbStatus === "synced" ? "#10b981" : dbStatus === "error" ? "#ef4444" : "#888", fontSize: "0.78rem" }}>
+              {dbStatus === "synced"  ? "Connected — MongoDB is syncing correctly" :
+               dbStatus === "error"   ? "Unavailable — falling back to localStorage" :
+               dbStatus === "syncing" ? "Connecting to MongoDB…" :
+                                        "Not connected — data stored locally only"}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Change PIN */}
       <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 16, padding: "24px", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
@@ -1783,11 +1805,7 @@ function ProjectsSection() {
                   style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%", transformStyle: "preserve-3d" }}
                 >
                   <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, aspectRatio: "16/9" }}>
-                    {project.image && <img src={project.image} alt={project.title} className="project-image" />}
-                    {/* Scan line on image */}
-                    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 20, pointerEvents: "none" }}>
-                      <div className="scan-line" />
-                    </div>
+                    {project.image && <img src={project.image} alt={project.title} className="project-image" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
                     <div style={{ position: "absolute", bottom: 12, left: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {(project.tech || []).map((t, ti) => (
                         <motion.span key={t}
