@@ -133,6 +133,30 @@ const GLOBAL_CSS = `
     .contact-grid { grid-template-columns: 1fr !important; }
   }
 
+  /* Navbar container responsive styles */
+  .navbar-container {
+    background: rgba(18, 18, 20, 0.75);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9999px;
+    padding: 8px 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  @media (max-width: 768px) {
+    .navbar-container {
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+  }
+
+
   /* iOS Safari safe area */
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     footer { padding-bottom: calc(clamp(32px,4vw,56px) + env(safe-area-inset-bottom)); }
@@ -641,16 +665,10 @@ function Navbar() {
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          className="navbar-container"
           style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             gap: 12,
-            background: "rgba(18, 18, 20, 0.75)",
-            backdropFilter: "blur(28px)",
-            WebkitBackdropFilter: "blur(28px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 9999,
-            padding: "8px 10px 8px 10px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         >
           {/* NR Logo box — click to open admin PIN */}
@@ -941,7 +959,7 @@ function AdminPortal() {
 
   const label = (text) => <label style={{ display: "block", color: "#888", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{text}</label>;
   const field = (labelText, val, onChange, type, rows) => (
-    <div style={{ marginBottom: 16 }}>{label(labelText)}{inp(val, onChange, type, rows)}</div>
+    <div key={labelText} style={{ marginBottom: 16 }}>{label(labelText)}{inp(val, onChange, type, rows)}</div>
   );
 
   const card = (children, key) => (
@@ -1704,8 +1722,8 @@ function AboutSection() {
               </div>
               <p style={{ color: "#888", lineHeight: 1.7, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>{data.personalInfo.heroDescription}</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {[{ label: data.personalInfo.email, icon: Mail, href: `mailto:${data.personalInfo.email}` }, { label: data.personalInfo.location, icon: MapPin, href: "#" }].map(item => (
-                  <motion.a key={item.label} href={item.href} whileHover={{ scale: 1.04, y: -2 }} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#888", fontSize: "0.82rem", transition: "color 0.2s" }}
+                {[{ label: data.personalInfo.email, icon: Mail, href: `mailto:${data.personalInfo.email}` }, { label: data.personalInfo.location, icon: MapPin, href: "#" }].map((item, idx) => (
+                  <motion.a key={item.label || idx} href={item.href} whileHover={{ scale: 1.04, y: -2 }} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#888", fontSize: "0.82rem", transition: "color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#888"}>
                     <item.icon size={14} />{item.label}
                   </motion.a>
@@ -1861,8 +1879,8 @@ function ProjectsSection() {
                       <Icon size={22} />
                     </motion.div>
                     <div style={{ display: "flex", gap: 8 }}>
-                      {[{ icon: Github, href: project.github }, { icon: ExternalLink, href: project.live }].map(({ icon: BtnIcon, href }) => (
-                        <motion.a key={href || "#"} href={href || "#"} whileHover={{ scale: 1.15, y: -3 }} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
+                      {[{ icon: Github, href: project.github }, { icon: ExternalLink, href: project.live }].map(({ icon: BtnIcon, href }, btnIdx) => (
+                        <motion.a key={btnIdx} href={href || "#"} whileHover={{ scale: 1.15, y: -3 }} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
                           onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#666"}>
                           <BtnIcon size={16} />
                         </motion.a>
@@ -1921,7 +1939,7 @@ function SkillsSection() {
                   >{category}</motion.h3>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {skillList.map((skill, i) => (
-                      <motion.span key={skill.name}
+                      <motion.span key={`${skill.name}-${i}`}
                         initial={{ scale: 0.6, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
                         transition={{ delay: idx * 0.07 + 0.15 + i * 0.045, ease: [0.34, 1.56, 0.64, 1] }}
@@ -2148,7 +2166,7 @@ function WhatIBuildSection() {
             const fromLeft = i % 2 === 0;
             return (
               <motion.div
-                key={service.title}
+                key={`${service.title}-${i}`}
                 initial={{ opacity: 0, x: fromLeft ? -50 : 50, y: 20 }}
                 whileInView={{ opacity: 1, x: 0, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
