@@ -2977,8 +2977,7 @@ const getServiceIcon = (title) => {
 function WhatIBuildSection() {
   const { data } = useAdmin();
   const [activeCard, setActiveCard] = useState(null);
-  const [rotationAngle, setRotationAngle] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const rotationAngleRef = useRef(0);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   // Dynamic viewport sizing for zero-lag mobile responsiveness
@@ -2987,18 +2986,6 @@ function WhatIBuildSection() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Slow auto-rotation loop
-  useEffect(() => {
-    if (isPaused || activeCard !== null) return;
-    let animId;
-    const tick = () => {
-      setRotationAngle(prev => (prev + 0.002) % (Math.PI * 2));
-      animId = requestAnimationFrame(tick);
-    };
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
-  }, [isPaused, activeCard]);
 
   const services = data.whatIBuild || [];
   const N = services.length;
@@ -3012,19 +2999,70 @@ function WhatIBuildSection() {
   const nodeSize = isMobileSize ? 42 : 54;
   const hubSize = isMobileSize ? 140 : 220;
 
-  // Calculate coordinates for nodes
+  const nodesRefs = useRef([]);
+  const svgLinesRefs = useRef([]);
+  const pulseCircleRef = useRef(null);
+
+  // Initial nodes layout coordinates for SSR/First paint
   const nodes = useMemo(() => {
     return services.map((service, idx) => {
-      const angle = (2 * Math.PI * idx) / N + rotationAngle;
+      const angle = (2 * Math.PI * idx) / N + rotationAngleRef.current;
       const x = cx + Math.cos(angle) * rx;
       const y = cy + Math.sin(angle) * ry;
-      const depth = Math.sin(angle); // ranges from -1 (top/back) to 1 (bottom/front)
+      const depth = Math.sin(angle);
       const color = service.color || "#a855f7";
       return { ...service, x, y, angle, depth, color, index: idx };
     });
-  }, [services, N, rotationAngle, cx, cy, rx, ry]);
+  }, [services, N, cx, cy, rx, ry]);
 
-  const activeService = activeCard !== null ? nodes[activeCard] : null;
+  // Animation loop updating DOM nodes directly to bypass React virtual DOM overhead and lag
+  useEffect(() => {
+    let animId;
+    const tick = () => {
+      // Rotate if no specific node is hovered/active
+      if (activeCard === null) {
+        rotationAngleRef.current = (rotationAngleRef.current + 0.002) % (Math.PI * 2);
+      }
+
+      services.forEach((service, idx) => {
+        const angle = (2 * Math.PI * idx) / N + rotationAngleRef.current;
+        const x = cx + Math.cos(angle) * rx;
+        const y = cy + Math.sin(angle) * ry;
+        const depth = Math.sin(angle); // ranges from -1 to 1
+
+        const nodeEl = nodesRefs.current[idx];
+        if (nodeEl) {
+          nodeEl.style.left = `${x}px`;
+          nodeEl.style.top = `${y}px`;
+          nodeEl.style.zIndex = String(Math.round(15 + depth * 5));
+          
+          const isActive = activeCard === idx;
+          const scale = 0.82 + (depth + 1) * 0.12;
+          const opacity = 0.55 + (depth + 1) * 0.225;
+          nodeEl.style.opacity = isActive ? "1" : String(opacity);
+          nodeEl.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        const lineEl = svgLinesRefs.current[idx];
+        if (lineEl) {
+          lineEl.setAttribute("x2", String(x));
+          lineEl.setAttribute("y2", String(y));
+        }
+
+        if (activeCard === idx && pulseCircleRef.current) {
+          pulseCircleRef.current.setAttribute("cx", String(x));
+          pulseCircleRef.current.setAttribute("cy", String(y));
+        }
+      });
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [services, N, cx, cy, rx, ry, activeCard]);
+
+  const activeService = activeCard !== null ? services[activeCard] : null;
 
   return (
     <section id="what-i-build" style={{
@@ -3051,8 +3089,8 @@ function WhatIBuildSection() {
 
         {/* Responsive Outer Wrapper for Orbit Map */}
         <div 
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => { setIsPaused(false); setActiveCard(null); }}
+          onMouseLeave={() => { setActiveCard(null); }}
+          onClick={() => { setActiveCard(null); }}
           style={{
             display: "flex",
             justifyContent: "center",
@@ -3082,6 +3120,7 @@ function WhatIBuildSection() {
                 return (
                   <g key={node.index}>
                     <line
+                      ref={el => svgLinesRefs.current[node.index] = el}
                       x1={cx}
                       y1={cy}
                       x2={node.x}
@@ -3094,6 +3133,7 @@ function WhatIBuildSection() {
                     {/* Glowing pulse particle on active connection path */}
                     {isActive && (
                       <motion.circle
+                        ref={pulseCircleRef}
                         r={4}
                         fill={node.color}
                         initial={{ cx: cx, cy: cy }}
@@ -3205,11 +3245,12 @@ function WhatIBuildSection() {
               return (
                 <div
                   key={node.index}
+                  ref={el => nodesRefs.current[node.index] = el}
                   style={{
                     position: "absolute",
                     left: node.x,
                     top: node.y,
-                    transform: "translate(-50%, -50%)",
+                    transform: `translate(-50%, -50%) scale(${scale})`,
                     zIndex: Math.round(15 + node.depth * 5),
                     opacity: isActive ? 1 : opacity,
                     transition: "opacity 0.3s, z-index 0.3s"
@@ -3217,6 +3258,10 @@ function WhatIBuildSection() {
                 >
                   <motion.div
                     onMouseEnter={() => setActiveCard(node.index)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveCard(isActive ? null : node.index);
+                    }}
                     whileHover={{ scale: 1.12 }}
                     style={{
                       position: "relative",
