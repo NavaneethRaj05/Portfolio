@@ -3,7 +3,7 @@
 // Jack 3D Creator frontend + Navaneeth's real data + Admin CMS
 // ============================================================
 
-import { useEffect, useState, createContext, useContext, useMemo, useRef } from "react";
+import React, { useEffect, useState, createContext, useContext, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import {
   Github, Linkedin, Twitter, Mail, X, Lock, Save, LogOut,
@@ -2692,6 +2692,60 @@ function ConstellationCanvasMap({ skills }) {
     isDragging.current = false;
   };
 
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      isDragging.current = true;
+      dragStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.touches[0].clientX - rect.left;
+      const my = e.touches[0].clientY - rect.top;
+      
+      let found = null;
+      let minDist = 28; // larger threshold for touch targets on mobile
+      
+      stars.forEach(star => {
+        const dist = Math.hypot(star.px - mx, star.py - my);
+        if (dist < minDist) {
+          minDist = dist;
+          found = star;
+        }
+      });
+      
+      if (found) {
+        setHoveredStar(found);
+        setTooltipPos({ x: found.px, y: found.py });
+      } else {
+        setHoveredStar(null);
+      }
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      
+      if (isDragging.current) {
+        if (e.cancelable) e.preventDefault();
+        
+        const deltaX = touch.clientX - dragStart.current.x;
+        const deltaY = touch.clientY - dragStart.current.y;
+        
+        rotation.current.y += deltaX * 0.008;
+        rotation.current.x += deltaY * 0.008;
+        dragStart.current = { x: touch.clientX, y: touch.clientY };
+        
+        setHoveredStar(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+  };
+
   const handleClick = () => {
     if (hoveredStar) {
       console.log(`Clicked skill star: ${hoveredStar.name}`);
@@ -2717,8 +2771,12 @@ function ConstellationCanvasMap({ skills }) {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={() => { isDragging.current = false; setHoveredStar(null); }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onClick={handleClick}
-        style={{ display: "block", width: "100%", height: "100%" }}
+        style={{ display: "block", width: "100%", height: "100%", touchAction: "none" }}
       />
 
       {/* Floating glassmorphic tooltip card */}
@@ -3063,6 +3121,7 @@ function WhatIBuildSection() {
   }, [services, N, cx, cy, rx, ry, activeCard]);
 
   const activeService = activeCard !== null ? services[activeCard] : null;
+  const ActiveServiceIcon = activeService ? getServiceIcon(activeService.title) : null;
 
   return (
     <section id="what-i-build" style={{
@@ -3091,6 +3150,7 @@ function WhatIBuildSection() {
         <div 
           onMouseLeave={() => { setActiveCard(null); }}
           onClick={() => { setActiveCard(null); }}
+          onTouchStart={() => { setActiveCard(null); }}
           style={{
             display: "flex",
             justifyContent: "center",
@@ -3215,11 +3275,11 @@ function WhatIBuildSection() {
                       transition={{ duration: 0.25 }}
                       style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
                     >
-                      {React.createElement(getServiceIcon(activeService.title), {
-                        size: isMobileSize ? 18 : 24,
-                        color: activeService.color,
-                        style: { marginBottom: 6, filter: `drop-shadow(0 0 8px ${activeService.color}60)` }
-                      })}
+                      {ActiveServiceIcon && <ActiveServiceIcon
+                        size={isMobileSize ? 18 : 24}
+                        color={activeService.color}
+                        style={{ marginBottom: 6, filter: `drop-shadow(0 0 8px ${activeService.color}60)` }}
+                      />}
                       <h4 style={{ color: "white", fontSize: isMobileSize ? "0.72rem" : "0.85rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         {activeService.title}
                       </h4>
@@ -3258,9 +3318,13 @@ function WhatIBuildSection() {
                 >
                   <motion.div
                     onMouseEnter={() => setActiveCard(node.index)}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      setActiveCard(node.index);
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveCard(isActive ? null : node.index);
+                      setActiveCard(node.index);
                     }}
                     whileHover={{ scale: 1.12 }}
                     style={{
@@ -3315,6 +3379,77 @@ function WhatIBuildSection() {
               );
             })}
           </div>
+        </div>
+
+        {/* Dedicated Capability Info Panel */}
+        <div style={{ 
+          marginTop: 24, 
+          minHeight: 110, 
+          display: "flex", 
+          justifyContent: "center",
+          width: "100%",
+          padding: "0 10px"
+        }}>
+          <AnimatePresence mode="wait">
+            {activeService ? (
+              <motion.div
+                key={activeService.title}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25 }}
+                style={{
+                  maxWidth: 600,
+                  width: "100%",
+                  background: "rgba(10, 10, 18, 0.75)",
+                  border: `1.5px solid ${activeService.color}40`,
+                  borderRadius: 16,
+                  padding: "16px 20px",
+                  boxShadow: `0 8px 30px rgba(0,0,0,0.5), 0 0 15px ${activeService.color}15`,
+                  textAlign: "center",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)"
+                }}
+              >
+                <h3 style={{ 
+                  color: "white", 
+                  fontWeight: 800, 
+                  fontSize: "clamp(1rem, 1.5vw, 1.25rem)", 
+                  marginBottom: 8, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  gap: 8,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  fontFamily: "'Kanit', sans-serif"
+                }}>
+                  {ActiveServiceIcon && <ActiveServiceIcon 
+                    size={18} 
+                    color={activeService.color}
+                    style={{ filter: `drop-shadow(0 0 6px ${activeService.color})` }}
+                  />}
+                  <span style={{ color: activeService.color }}>{activeService.title}</span>
+                </h3>
+                <p style={{ color: "#d1d5db", lineHeight: 1.6, fontSize: "clamp(0.85rem, 1.1vw, 0.95rem)", margin: 0 }}>
+                  {activeService.description}
+                </p>
+              </motion.div>
+            ) : (
+              <div style={{ 
+                color: "#666", 
+                fontSize: "0.88rem", 
+                fontStyle: "italic", 
+                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                gap: 6
+              }}>
+                <Sparkles size={14} color="#666" />
+                {isMobileSize ? "Tap any orbital node to view details" : "Hover or click any orbital node to view details"}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>
