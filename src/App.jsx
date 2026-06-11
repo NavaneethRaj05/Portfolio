@@ -12,7 +12,7 @@ import {
   ExternalLink, Star, GitFork, MapPin, Send,
   Sparkles, BookOpen, Trophy, Code, Smartphone, Menu,
   Plus, Trash2, Palette, Settings, CheckCircle, AlertCircle,
-  Key, Database, RefreshCw
+  Key, Database, RefreshCw, FileText
 } from "lucide-react";
 import { mongoLoad, mongoSave, sendEmail, mongoConfigured, ADMIN_EMAIL } from "./services.js";
 
@@ -1182,6 +1182,51 @@ function AdminPortal() {
                     </div>
                     {field("Title", proj.title, v => { const n = [...data.projects]; n[i] = { ...n[i], title: v }; updateData("projects", n); })}
                     {field("Description", proj.description, v => { const n = [...data.projects]; n[i] = { ...n[i], description: v }; updateData("projects", n); }, "text", 3)}
+                    <div style={{ marginBottom: 16 }}>
+                      {label("Project Image")}
+                      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                        {proj.image && (
+                          <img src={proj.image} alt="Preview" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", border: "1px solid #333" }} />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                const base64String = reader.result;
+                                const n = [...data.projects];
+                                n[i] = { ...n[i], image: base64String };
+                                updateData("projects", n);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          style={{ display: "none" }}
+                          id={`proj-img-file-${i}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById(`proj-img-file-${i}`).click()}
+                          style={{
+                            background: S.purple,
+                            border: "none",
+                            borderRadius: 10,
+                            padding: "10px 16px",
+                            color: "white",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            fontSize: "0.8rem",
+                            fontFamily: "'Kanit', sans-serif"
+                          }}
+                        >
+                          Upload File
+                        </button>
+                        <span style={{ color: "#666", fontSize: "0.75rem" }}>or enter URL below:</span>
+                      </div>
+                    </div>
                     {field("Image URL", proj.image, v => { const n = [...data.projects]; n[i] = { ...n[i], image: v }; updateData("projects", n); })}
                     <CommaSeparatedField labelText="Technologies (comma separated)" valueArray={proj.tech || []} onChange={v => { const n = [...data.projects]; n[i] = { ...n[i], tech: v }; updateData("projects", n); }} purpleColor={S.purple} />
                     {field("GitHub URL", proj.github, v => { const n = [...data.projects]; n[i] = { ...n[i], github: v }; updateData("projects", n); })}
@@ -1259,6 +1304,51 @@ function AdminPortal() {
                     {field("Title", cert.title, v => { const n = [...data.certifications]; n[i] = { ...n[i], title: v }; updateData("certifications", n); })}
                     {field("Issuer", cert.issuer, v => { const n = [...data.certifications]; n[i] = { ...n[i], issuer: v }; updateData("certifications", n); })}
                     {field("Year", cert.year, v => { const n = [...data.certifications]; n[i] = { ...n[i], year: v }; updateData("certifications", n); })}
+                    <div style={{ marginBottom: 16 }}>
+                      {label("Certification Image")}
+                      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                        {cert.image && (
+                          <img src={cert.image} alt="Preview" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "contain", border: "1px solid #333", background: "rgba(255,255,255,0.05)" }} />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                const base64String = reader.result;
+                                const n = [...data.certifications];
+                                n[i] = { ...n[i], image: base64String };
+                                updateData("certifications", n);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          style={{ display: "none" }}
+                          id={`cert-img-file-${i}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById(`cert-img-file-${i}`).click()}
+                          style={{
+                            background: S.purple,
+                            border: "none",
+                            borderRadius: 10,
+                            padding: "10px 16px",
+                            color: "white",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            fontSize: "0.8rem",
+                            fontFamily: "'Kanit', sans-serif"
+                          }}
+                        >
+                          Upload File
+                        </button>
+                        <span style={{ color: "#666", fontSize: "0.75rem" }}>or enter URL below:</span>
+                      </div>
+                    </div>
                     {field("Image URL", cert.image, v => { const n = [...data.certifications]; n[i] = { ...n[i], image: v }; updateData("certifications", n); })}
                     {field("Credential Link", cert.credentialLink, v => { const n = [...data.certifications]; n[i] = { ...n[i], credentialLink: v }; updateData("certifications", n); })}
                   </div>, i
@@ -1832,68 +1922,266 @@ function EducationSection() {
 // ============================================================
 function ProjectsSection() {
   const { data } = useAdmin();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [cardPositions, setCardPositions] = useState([
+    { x: 40, y: 30, rot: -4 },
+    { x: 480, y: 15, rot: 5 },
+    { x: 100, y: 330, rot: 6 },
+    { x: 540, y: 300, rot: -3 }
+  ]);
+
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  const threads = useMemo(() => {
+    const list = [];
+    const projs = data.projects;
+    for (let i = 0; i < projs.length; i++) {
+      for (let j = i + 1; j < projs.length; j++) {
+        const shared = projs[i].tech.filter(t => projs[j].tech.includes(t));
+        if (shared.length > 0) {
+          list.push({ from: i, to: j, tech: shared[0] });
+        }
+      }
+    }
+    return list;
+  }, [data.projects]);
+
   return (
-    <section id="projects" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
-      <ParticlesBg count={10} />
-      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
-        <FadeIn delay={0} y={40} style={{ marginBottom: "clamp(48px,6vw,96px)", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-          <SectionHeading>Projects</SectionHeading>
-          <p style={{ color: "#666", maxWidth: 500, textAlign: "center", lineHeight: 1.6, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>
-            A showcase of my recent experiments and full-stack solutions.
+    <section id="projects" style={{
+      background: "#120a06",
+      backgroundImage: "radial-gradient(#1a110b 1px, transparent 1px), radial-gradient(#1a110b 1px, #120a06 1px)",
+      backgroundSize: "24px 24px",
+      backgroundPosition: "0 0, 12px 12px",
+      padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
+      position: "relative",
+      overflow: "hidden",
+      borderTop: "1px solid rgba(255,255,255,0.05)",
+      borderBottom: "1px solid rgba(255,255,255,0.05)"
+    }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
+        <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
+          <SectionHeading>Project Board</SectionHeading>
+          <p style={{ color: "#8b7e74", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>
+            Drag and inspect my work. Polaroid pins connect via red thread paths of shared technologies.
           </p>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 480px), 1fr))", gap: "clamp(16px,2vw,32px)" }}>
-          {data.projects.map((project, i) => {
-            const Icon = project.icon || Briefcase;
-            const fromLeft = i % 2 === 0;
-            return (
-              <motion.div
-                key={project.id || i}
-                initial={{ opacity: 0, x: fromLeft ? -60 : 60, y: 20 }}
-                whileInView={{ opacity: 1, x: 0, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.7, delay: i * 0.06, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                <motion.div
-                  whileHover={{ y: -10, rotateX: 2, rotateY: fromLeft ? -2 : 2, boxShadow: "0 28px 60px rgba(0,0,0,0.5), 0 0 30px rgba(168,85,247,0.12)" }}
-                  transition={{ duration: 0.3 }}
-                  className="glass glow-card"
-                  style={{ borderRadius: 40, padding: "clamp(20px,2vw,32px)", display: "flex", flexDirection: "column", height: "100%", transformStyle: "preserve-3d" }}
-                >
-                  <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, aspectRatio: "16/9" }}>
-                    {project.image && <img src={project.image} alt={project.title} className="project-image" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
-                    <div style={{ position: "absolute", bottom: 12, left: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(project.tech || []).map((t, ti) => (
-                        <motion.span key={t}
-                          initial={{ opacity: 0, scale: 0.7 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.1 + ti * 0.05 }}
-                          viewport={{ once: true }}
-                          style={{ padding: "4px 10px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 9999, fontSize: "0.68rem", color: "white", border: "1px solid rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "0.06em" }}
-                        >{t}</motion.span>
+
+        {isMobile ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 32, alignItems: "center" }}>
+            {data.projects.map((project, i) => {
+              return (
+                <div key={project.id || i} style={{
+                  background: "#faf9f6",
+                  border: "1px solid rgba(0,0,0,0.1)",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                  padding: "16px 16px 28px 16px",
+                  borderRadius: 2,
+                  maxWidth: 340,
+                  width: "100%",
+                  color: "#22d3ee"
+                }}>
+                  <div style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden", background: "#faf9f6", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {project.image && <img src={project.image} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
+                  </div>
+                  <h3 style={{ fontFamily: "monospace", fontSize: "1.1rem", fontWeight: "bold", color: "#222", margin: "0 0 8px 0" }}>
+                    # {project.title.toUpperCase()}
+                  </h3>
+                  <p style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.4, margin: "0 0 16px 0" }}>
+                    {project.description}
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {project.tech.slice(0, 3).map(t => (
+                        <span key={t} style={{ border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: "0.62rem", color: "#555", background: "#f5f5f5" }}>
+                          {t}
+                        </span>
                       ))}
                     </div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <motion.div whileHover={{ rotate: 15, scale: 1.2 }} style={{ padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 12, color: S.purple, cursor: "default" }}>
-                      <Icon size={22} />
-                    </motion.div>
                     <div style={{ display: "flex", gap: 8 }}>
-                      {[{ icon: Github, href: project.github }, { icon: ExternalLink, href: project.live }].map(({ icon: BtnIcon, href }, btnIdx) => (
-                        <motion.a key={btnIdx} href={href || "#"} whileHover={{ scale: 1.15, y: -3 }} className="glass" style={{ padding: 8, borderRadius: 10, color: "#666", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.2s" }}
-                          onMouseEnter={e => e.currentTarget.style.color = "white"} onMouseLeave={e => e.currentTarget.style.color = "#666"}>
-                          <BtnIcon size={16} />
-                        </motion.a>
-                      ))}
+                      <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><Github size={16} /></a>
+                      <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><ExternalLink size={16} /></a>
                     </div>
                   </div>
-                  <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,1.8vw,1.5rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 10 }}>{project.title}</h3>
-                  <p style={{ color: "#888", lineHeight: 1.6, fontSize: "clamp(0.82rem,1.1vw,0.95rem)", flex: 1 }}>{project.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ position: "relative", height: 720, background: "rgba(0,0,0,0.15)", borderRadius: 24, border: "2px solid rgba(139, 126, 116, 0.15)", overflow: "hidden" }}>
+            <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, width: "100%", height: "100%" }}>
+              {threads.map((thread, idx) => {
+                const p1 = cardPositions[thread.from];
+                const p2 = cardPositions[thread.to];
+                if (!p1 || !p2) return null;
+
+                const x1 = p1.x + 160;
+                const y1 = p1.y + 12;
+                const x2 = p2.x + 160;
+                const y2 = p2.y + 12;
+
+                const isFromHovered = hoveredIndex === thread.from;
+                const isToHovered = hoveredIndex === thread.to;
+                const active = isFromHovered || isToHovered;
+
+                let opacity = 0.25;
+                let strokeWidth = 1.5;
+                if (hoveredIndex !== null) {
+                  opacity = active ? 0.85 : 0.04;
+                  strokeWidth = active ? 2.5 : 1.0;
+                }
+
+                const cx = (x1 + x2) / 2;
+                const cy = (y1 + y2) / 2 + 35;
+
+                return (
+                  <g key={idx}>
+                    <path
+                      d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
+                      fill="none"
+                      stroke="rgba(0,0,0,0.4)"
+                      strokeWidth={strokeWidth}
+                      strokeDasharray="2,3"
+                      transform="translate(2, 4)"
+                    />
+                    <path
+                      d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth={strokeWidth}
+                      strokeDasharray="3,3"
+                      style={{
+                        opacity,
+                        filter: active ? "drop-shadow(0 0 3px rgba(239, 68, 68, 0.6))" : "none",
+                        transition: "opacity 0.3s, stroke-width 0.3s"
+                      }}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
+
+            {data.projects.map((project, i) => {
+              const pos = cardPositions[i];
+              if (!pos) return null;
+
+              const isHovered = hoveredIndex === i;
+              const isOtherHovered = hoveredIndex !== null && hoveredIndex !== i;
+
+              return (
+                <motion.div
+                  key={project.id || i}
+                  drag
+                  dragMomentum={false}
+                  dragElastic={0.05}
+                  onDrag={(event, info) => {
+                    setCardPositions(prev => {
+                      const next = [...prev];
+                      next[i] = {
+                        ...next[i],
+                        x: next[i].x + info.delta.x,
+                        y: next[i].y + info.delta.y
+                      };
+                      return next;
+                    });
+                  }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  style={{
+                    position: "absolute",
+                    left: pos.x,
+                    top: pos.y,
+                    transform: `rotate(${pos.rot}deg)`,
+                    width: 320,
+                    background: "#faf9f6",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: isHovered
+                      ? "0 30px 60px rgba(0,0,0,0.5), 0 0 15px rgba(239, 68, 68, 0.2)"
+                      : "0 10px 30px rgba(0,0,0,0.35)",
+                    padding: "16px 16px 24px 16px",
+                    borderRadius: 2,
+                    cursor: "grab",
+                    zIndex: isHovered ? 25 : 15,
+                    opacity: isOtherHovered ? 0.6 : 1.0,
+                    transition: "box-shadow 0.2s, opacity 0.3s",
+                    userSelect: "none"
+                  }}
+                  whileTap={{ cursor: "grabbing", scale: 1.02 }}
+                >
+                  <div style={{
+                    position: "absolute",
+                    top: 10,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    background: isHovered ? "#ef4444" : "#ef444499",
+                    border: "2px solid #fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
+                    zIndex: 20
+                  }} />
+
+                  <div style={{
+                    position: "relative",
+                    aspectRatio: "4/3",
+                    overflow: "hidden",
+                    background: "#faf9f6",
+                    marginBottom: 16,
+                    pointerEvents: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    {project.image && <img src={project.image} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
+                  </div>
+
+                  <h3 style={{
+                    fontFamily: "monospace",
+                    fontSize: "0.95rem",
+                    fontWeight: 900,
+                    color: "#222",
+                    margin: "0 0 6px 0",
+                    textTransform: "uppercase"
+                  }}>
+                    # {project.title}
+                  </h3>
+                  
+                  <p style={{
+                    fontSize: "0.78rem",
+                    color: "#555",
+                    lineHeight: 1.4,
+                    height: 54,
+                    overflow: "hidden",
+                    margin: "0 0 12px 0"
+                  }}>
+                    {project.description}
+                  </p>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #ddd", paddingTop: 10 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {project.tech.slice(0, 3).map(t => (
+                        <span key={t} style={{ border: "1px solid #ddd", borderRadius: 4, padding: "1px 5px", fontSize: "0.58rem", color: "#666", background: "#f0f0f0" }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><Github size={14} /></a>
+                      <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><ExternalLink size={14} /></a>
+                    </div>
+                  </div>
                 </motion.div>
-              </motion.div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1904,58 +2192,590 @@ function ProjectsSection() {
 // ============================================================
 function SkillsSection() {
   const { data } = useAdmin();
+  
+  // Map skills to the required constellation data structure
+  const mappedSkills = useMemo(() => {
+    const list = [];
+    Object.entries(data.skills).forEach(([category, skillList]) => {
+      skillList.forEach((sk, idx) => {
+        // Find matching projects
+        const matchedProjects = data.projects
+          .filter(p => p.tech?.some(t => t.toLowerCase() === sk.name.toLowerCase()))
+          .map(p => p.title);
+        
+        // Generate pseudo-proficiency dynamically based on skill name
+        const seed = sk.name.charCodeAt(0) + (sk.name.charCodeAt(1) || 0);
+        const proficiency = 72 + (seed % 24); // between 72% and 96%
+        
+        list.push({
+          name: sk.name,
+          category: category,
+          proficiency,
+          projects: matchedProjects.length > 0 ? matchedProjects : ["Prototype Engine"]
+        });
+      });
+    });
+    return list;
+  }, [data.skills, data.projects]);
+
   return (
-    <section id="skills" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70vw", height: "70vw", maxWidth: 700, background: "radial-gradient(ellipse, rgba(168,85,247,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
+    <section id="skills" style={{
+      background: "#0a0a14", // dark navy visual rule
+      padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
+      position: "relative",
+      overflow: "hidden"
+    }}>
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70vw", height: "70vw", maxWidth: 700, background: "radial-gradient(ellipse, rgba(168,85,247,0.03) 0%, transparent 70%)", pointerEvents: "none" }} />
+      
       <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
-          <SectionHeading>Skills</SectionHeading>
-          <p style={{ color: "#666", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>A specialized toolkit forged through intensive building and experimentation.</p>
+          <SectionHeading>Interactive Stack Network</SectionHeading>
+          <p style={{ color: "#ef4444", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", marginTop: 16 }}>
+            Interactive Stack Network
+          </p>
+          <p style={{ color: "#8b7e74", marginTop: 8, fontSize: "clamp(0.95rem,1.2vw,1.15rem)" }}>
+            Drag the globe to inspect the stack.
+          </p>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
-          {Object.entries(data.skills).map(([category, skillList], idx) => {
-            const fromLeft = idx % 2 === 0;
-            return (
-              <motion.div
-                key={category}
-                initial={{ opacity: 0, x: fromLeft ? -60 : 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.65, delay: idx * 0.07, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                <motion.div
-                  whileHover={{ borderColor: "rgba(255,255,255,0.22)", y: -6, boxShadow: "0 20px 40px rgba(34,211,238,0.08)" }}
-                  transition={{ duration: 0.3 }}
-                  className="glass"
-                  style={{ borderRadius: 32, padding: "clamp(24px,2.5vw,40px)", position: "relative", overflow: "hidden", height: "100%" }}
-                >
-                  <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "rgba(34,211,238,0.05)", borderRadius: "50%", filter: "blur(20px)" }} />
-                  <motion.h3
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.07 + 0.2 }}
-                    style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700, marginBottom: 24 }}
-                  >{category}</motion.h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {skillList.map((skill, i) => (
-                      <motion.span key={`${skill.name}-${i}`}
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        whileInView={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: idx * 0.07 + 0.15 + i * 0.045, ease: [0.34, 1.56, 0.64, 1] }}
-                        viewport={{ once: true }}
-                        whileHover={{ scale: 1.1, y: -4, borderColor: "rgba(34,211,238,0.6)", background: "rgba(34,211,238,0.1)", color: "white" }}
-                        style={{ padding: "8px 14px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: "0.8rem", fontWeight: 600, color: "#aaa", cursor: "default", display: "inline-block" }}
-                      >{skill.name}</motion.span>
-                    ))}
-                  </div>
-                </motion.div>
-              </motion.div>
-            );
-          })}
+
+        {/* Constellation Canvas Map */}
+        <ConstellationCanvasMap skills={mappedSkills} />
+
+        {/* Screen Reader Fallback Accessibility */}
+        <div className="sr-only" style={{ display: "none" }}>
+          <ul>
+            {mappedSkills.map(sk => (
+              <li key={sk.name}>{sk.name} ({sk.category}) - Proficiency: {sk.proficiency}%, Projects: {sk.projects.join(", ")}</li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// CONSTELLATION CANVAS DRAWING SUB-COMPONENT
+// ============================================================
+function ConstellationCanvasMap({ skills }) {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const [hoveredStar, setHoveredStar] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // 3D rotation states
+  const rotation = useRef({ x: 0.2, y: 0.3 });
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const rotationVelocity = useRef({ x: 0.0005, y: 0.0025 }); // slow continuous rotation
+
+  // Process star data once using spherical distribution
+  const stars = useMemo(() => {
+    const R = 180;
+    const N = skills.length;
+    return skills.map((sk, idx) => {
+      // Uniform distribution on a sphere using Fibonacci sphere algorithm
+      const y = 1 - (idx / (N - 1)) * 2; // y goes from 1 to -1
+      const radiusAtY = Math.sqrt(1 - y * y); // radius at y
+      const goldenRatio = Math.PI * (3 - Math.sqrt(5));
+      const theta = goldenRatio * idx;
+
+      const x = Math.cos(theta) * radiusAtY;
+      const z = Math.sin(theta) * radiusAtY;
+
+      const getCategoryDetails = (category) => {
+        const cat = category.toLowerCase();
+        if (cat.includes("front")) return "#22d3ee";
+        if (cat.includes("back")) return "#a855f7";
+        if (cat.includes("ai") || cat.includes("ml")) return "#10b981";
+        if (cat.includes("data")) return "#f59e0b";
+        return "#eab308";
+      };
+      const color = getCategoryDetails(sk.category);
+
+      return {
+        ...sk,
+        x3d: x * R,
+        y3d: y * R,
+        z3d: z * R,
+        color,
+        // projected 2D coordinates populated during render
+        px: 0,
+        py: 0,
+        pSize: 6
+      };
+    });
+  }, [skills]);
+
+  // Handle resizing and main drawing loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animationId = null;
+
+    // Resize canvas
+    const resizeCanvas = () => {
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = Math.max(500, rect.width * 0.55);
+    };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Static background background stars (twinkling, non-rotating)
+    const bgStarsCount = 30;
+    const bgStars = Array.from({ length: bgStarsCount }, (_, i) => ({
+      x: Math.random(),
+      y: Math.random(),
+      size: Math.random() * 1.2 + 0.4,
+      twinklePhase: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.02 + Math.random() * 0.03
+    }));
+
+    // Main render loop
+    const render = () => {
+      if (!canvas || !ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const cameraDist = 550;
+      const R = 180;
+
+      // Draw background stars
+      bgStars.forEach(star => {
+        star.twinklePhase += star.twinkleSpeed;
+        const opacity = 0.25 + 0.5 * Math.sin(star.twinklePhase);
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(star.x * canvas.width, star.y * canvas.height, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Update rotation angles if not dragging/hovering
+      if (!isDragging.current && !hoveredStar) {
+        rotation.current.y += rotationVelocity.current.y;
+        rotation.current.x += rotationVelocity.current.x;
+      }
+
+      // Compute cos/sin values for 3D rotation
+      const cosY = Math.cos(rotation.current.y);
+      const sinY = Math.sin(rotation.current.y);
+      const cosX = Math.cos(rotation.current.x);
+      const sinX = Math.sin(rotation.current.x);
+
+      // 1. Draw volumetric shading gradient inside the globe to make it feel solid/spherical
+      const globegrd = ctx.createRadialGradient(centerX - R / 4, centerY - R / 4, 0, centerX, centerY, R);
+      globegrd.addColorStop(0, "rgba(99, 102, 241, 0.08)"); // center highlight
+      globegrd.addColorStop(0.6, "rgba(139, 92, 246, 0.03)");
+      globegrd.addColorStop(1, "rgba(10, 10, 24, 0.75)"); // dark edges to simulate sphere curvature
+      ctx.fillStyle = globegrd;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Draw Globe Wireframe (Latitudes & Longitudes) with segment-by-segment depth color
+      // Dynamic segments optimized for mobile viewport performance to avoid lag
+      const isMobileGlobe = canvas.width < 640;
+      const latCount = isMobileGlobe ? 4 : 7;
+      const lonCount = isMobileGlobe ? 5 : 8;
+      const segments = isMobileGlobe ? 16 : 32;
+
+      // Draw Latitude parallel rings
+      for (let i = 1; i < latCount; i++) {
+        const latAngle = (i / latCount) * Math.PI - Math.PI / 2;
+        const y_3d = R * Math.sin(latAngle);
+        const r_3d = R * Math.cos(latAngle);
+        
+        let prevPx = 0, prevPy = 0, prevZ = 0;
+        for (let j = 0; j <= segments; j++) {
+          const lonAngle = (j / segments) * Math.PI * 2;
+          const x_3d = r_3d * Math.cos(lonAngle);
+          const z_3d = r_3d * Math.sin(lonAngle);
+
+          // Project
+          const x1 = x_3d * cosY - z_3d * sinY;
+          const z1 = x_3d * sinY + z_3d * cosY;
+          const y1 = y_3d * cosX - z1 * sinX;
+          const z2 = y_3d * sinX + z1 * cosX;
+
+          const scale = cameraDist / (cameraDist + z2);
+          const px = centerX + x1 * scale;
+          const py = centerY + y1 * scale;
+
+          if (j > 0) {
+            ctx.beginPath();
+            ctx.moveTo(prevPx, prevPy);
+            ctx.lineTo(px, py);
+            const avgZ = (prevZ + z2) / 2;
+            const opacity = avgZ > 0 ? 0.03 : 0.16; // Front lines are much brighter, back is faded
+            ctx.strokeStyle = `rgba(129, 140, 248, ${opacity})`;
+            ctx.lineWidth = avgZ > 0 ? 0.8 : 1.2;
+            ctx.stroke();
+          }
+
+          prevPx = px;
+          prevPy = py;
+          prevZ = z2;
+        }
+      }
+
+      // Draw Longitude meridian rings
+      for (let i = 0; i < lonCount; i++) {
+        const lonAngle = (i / lonCount) * Math.PI * 2;
+        let prevPx = 0, prevPy = 0, prevZ = 0;
+        for (let j = 0; j <= segments; j++) {
+          const latAngle = (j / segments) * Math.PI * 2;
+          const x_3d = R * Math.cos(latAngle) * Math.cos(lonAngle);
+          const y_3d = R * Math.sin(latAngle);
+          const z_3d = R * Math.cos(latAngle) * Math.sin(lonAngle);
+
+          // Project
+          const x1 = x_3d * cosY - z_3d * sinY;
+          const z1 = x_3d * sinY + z_3d * cosY;
+          const y1 = y_3d * cosX - z1 * sinX;
+          const z2 = y_3d * sinX + z1 * cosX;
+
+          const scale = cameraDist / (cameraDist + z2);
+          const px = centerX + x1 * scale;
+          const py = centerY + y1 * scale;
+
+          if (j > 0) {
+            ctx.beginPath();
+            ctx.moveTo(prevPx, prevPy);
+            ctx.lineTo(px, py);
+            const avgZ = (prevZ + z2) / 2;
+            const opacity = avgZ > 0 ? 0.03 : 0.16;
+            ctx.strokeStyle = `rgba(129, 140, 248, ${opacity})`;
+            ctx.lineWidth = avgZ > 0 ? 0.8 : 1.2;
+            ctx.stroke();
+          }
+
+          prevPx = px;
+          prevPy = py;
+          prevZ = z2;
+        }
+      }
+
+      // 3. Draw outer rim boundary circle of the globe
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(129, 140, 248, 0.35)"; // clean, glowing outer rim
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Project all stars
+      const projected = stars.map(star => {
+        // Y-axis rotation
+        const x1 = star.x3d * cosY - star.z3d * sinY;
+        const z1 = star.x3d * sinY + star.z3d * cosY;
+
+        // X-axis rotation
+        const y1 = star.y3d * cosX - z1 * sinX;
+        const z2 = star.y3d * sinX + z1 * cosX;
+
+        // Perspective projection
+        const scale = cameraDist / (cameraDist + z2);
+        const px = centerX + x1 * scale;
+        const py = centerY + y1 * scale;
+        const pSize = star.pSize * scale;
+
+        star.px = px;
+        star.py = py;
+        star.pSize = pSize;
+        star.depth = z2; // save for sorting
+
+        return star;
+      });
+
+      // 2. Draw 3D Connection Arcs
+      const pairs = [
+        ["React", "Node.js"],
+        ["React", "TypeScript"],
+        ["Node.js", "Express.js"],
+        ["Node.js", "MongoDB"],
+        ["OpenAI APIs", "LangChain"],
+        ["Framer Motion", "UI/UX Design"],
+        ["Next.js", "Tailwind CSS"],
+        ["PostgreSQL", "REST APIs"],
+        ["Docker", "Git/GitHub"]
+      ];
+
+      pairs.forEach(([nameA, nameB]) => {
+        const a = projected.find(s => s.name.toLowerCase() === nameA.toLowerCase());
+        const b = projected.find(s => s.name.toLowerCase() === nameB.toLowerCase());
+        if (!a || !b) return;
+
+        // Draw a bezier curve in 3D
+        const midX = (a.x3d + b.x3d) / 2;
+        const midY = (a.y3d + b.y3d) / 2;
+        const midZ = (a.z3d + b.z3d) / 2;
+        const len = Math.hypot(midX, midY, midZ) || 1;
+        const push = 30; // arc bulge
+        const ctrlX = (midX / len) * (R + push);
+        const ctrlY = (midY / len) * (R + push);
+        const ctrlZ = (midZ / len) * (R + push);
+
+        ctx.beginPath();
+        const curvePoints = 20;
+        for (let t = 0; t <= curvePoints; t++) {
+          const ratio = t / curvePoints;
+          const term1 = (1 - ratio) * (1 - ratio);
+          const term2 = 2 * (1 - ratio) * ratio;
+          const term3 = ratio * ratio;
+
+          const px_3d = term1 * a.x3d + term2 * ctrlX + term3 * b.x3d;
+          const py_3d = term1 * a.y3d + term2 * ctrlY + term3 * b.y3d;
+          const pz_3d = term1 * a.z3d + term2 * ctrlZ + term3 * b.z3d;
+
+          // Project curve point
+          const cx1 = px_3d * cosY - pz_3d * sinY;
+          const cz1 = px_3d * sinY + pz_3d * cosY;
+          const cy1 = py_3d * cosX - cz1 * sinX;
+          const cz2 = py_3d * sinX + cz1 * cosX;
+
+          const scale = cameraDist / (cameraDist + cz2);
+          const cpx = centerX + cx1 * scale;
+          const cpy = centerY + cy1 * scale;
+
+          if (t === 0) ctx.moveTo(cpx, cpy);
+          else ctx.lineTo(cpx, cpy);
+        }
+
+        const isHoverConnected = hoveredStar && (hoveredStar.name === a.name || hoveredStar.name === b.name);
+        // Alpha fades if connection is on back of globe
+        const avgDepth = (a.depth + b.depth) / 2;
+        let baseAlpha = avgDepth > 0 ? 0.08 : 0.25;
+        if (isHoverConnected) baseAlpha = 0.85;
+
+        ctx.strokeStyle = `rgba(239, 68, 68, ${baseAlpha})`;
+        ctx.lineWidth = isHoverConnected ? 2.0 : 1.0;
+        ctx.stroke();
+      });
+
+      // Sort stars back-to-front (painter's algorithm)
+      const sorted = [...projected].sort((a, b) => b.depth - a.depth);
+
+      // 3. Draw Nodes (Pins + Labels)
+      sorted.forEach(star => {
+        const isSelf = hoveredStar && hoveredStar.name === star.name;
+        const isFront = star.depth <= 20; // is the node on the front side of the globe
+
+        if (!isFront && !isSelf) {
+          // Draw small faded dot in the back
+          ctx.beginPath();
+          ctx.arc(star.px, star.py, 2.5 * (cameraDist / (cameraDist + star.depth)), 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+          ctx.fill();
+          return;
+        }
+
+        // Draw pin (red and dark grey split triangle) pointing to star.px, star.py
+        const pinHeight = 12;
+        const pinHalfWidth = 4;
+        
+        // Left half: Red
+        ctx.beginPath();
+        ctx.moveTo(star.px, star.py);
+        ctx.lineTo(star.px - pinHalfWidth, star.py - pinHeight);
+        ctx.lineTo(star.px, star.py - pinHeight);
+        ctx.closePath();
+        ctx.fillStyle = "#ef4444";
+        ctx.fill();
+
+        // Right half: Dark grey
+        ctx.beginPath();
+        ctx.moveTo(star.px, star.py);
+        ctx.lineTo(star.px + pinHalfWidth, star.py - pinHeight);
+        ctx.lineTo(star.px, star.py - pinHeight);
+        ctx.closePath();
+        ctx.fillStyle = "#374151";
+        ctx.fill();
+
+        // Draw label text & pill below the pin
+        const labelText = star.name.toLowerCase();
+        ctx.font = "bold 9px monospace";
+        const textWidth = ctx.measureText(labelText).width;
+        
+        const pillW = textWidth + 12;
+        const pillH = 16;
+        const pillX = star.px - pillW / 2;
+        const pillY = star.py + 4;
+
+        // Draw pill shadow
+        ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 2;
+
+        // Draw pill background (white)
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        // Reset shadow
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Draw pill border
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Draw pill text
+        ctx.fillStyle = "#111827"; // dark text
+        ctx.textAlign = "center";
+        ctx.fillText(labelText, star.px, pillY + 11);
+      });
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      cancelAnimationFrame(animationId);
+    };
+  }, [stars, hoveredStar]);
+
+  // Handle mouse movements
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (isDragging.current) {
+      const deltaX = e.clientX - dragStart.current.x;
+      const deltaY = e.clientY - dragStart.current.y;
+      rotation.current.y += deltaX * 0.005;
+      rotation.current.x += deltaY * 0.005;
+      dragStart.current = { x: e.clientX, y: e.clientY };
+      setHoveredStar(null);
+      return;
+    }
+
+    // Find if hovering a star
+    let found = null;
+    let minDist = 18; // hover threshold distance in px
+
+    stars.forEach(star => {
+      const dist = Math.hypot(star.px - mx, star.py - my);
+      if (dist < minDist) {
+        minDist = dist;
+        found = star;
+      }
+    });
+
+    if (found) {
+      setHoveredStar(found);
+      setTooltipPos({ x: found.px, y: found.py });
+    } else {
+      setHoveredStar(null);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    setHoveredStar(null);
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleClick = () => {
+    if (hoveredStar) {
+      console.log(`Clicked skill star: ${hoveredStar.name}`);
+      scrollToSection("projects");
+    }
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      style={{
+        position: "relative",
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        cursor: isDragging.current ? "grabbing" : hoveredStar ? "pointer" : "grab"
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        onMouseMove={handleMouseMove}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => { isDragging.current = false; setHoveredStar(null); }}
+        onClick={handleClick}
+        style={{ display: "block", width: "100%", height: "100%" }}
+      />
+
+      {/* Floating glassmorphic tooltip card */}
+      <AnimatePresence>
+        {hoveredStar && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "absolute",
+              left: tooltipPos.x + 15,
+              top: tooltipPos.y - 65,
+              pointerEvents: "none",
+              zIndex: 30,
+              background: "rgba(10, 10, 24, 0.82)",
+              backdropFilter: "blur(12px)",
+              border: `1px solid ${hoveredStar.color}44`,
+              borderRadius: 14,
+              padding: "12px 16px",
+              boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 10px ${hoveredStar.color}1a`,
+              width: 200,
+              textAlign: "left"
+            }}
+          >
+            <h4 style={{ color: "white", fontSize: "0.85rem", fontWeight: 800, margin: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span>{hoveredStar.name}</span>
+              <span style={{ fontSize: "0.65rem", padding: "2px 6px", borderRadius: 4, background: `${hoveredStar.color}22`, color: hoveredStar.color, textTransform: "uppercase" }}>{hoveredStar.category}</span>
+            </h4>
+            
+            {/* Proficiency bar */}
+            <div style={{ marginTop: 10, marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#888", marginBottom: 3 }}>
+                <span>Proficiency</span>
+                <span style={{ color: hoveredStar.color, fontWeight: "bold" }}>{hoveredStar.proficiency}%</span>
+              </div>
+              <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 99 }}>
+                <div style={{ width: `${hoveredStar.proficiency}%`, height: "100%", background: hoveredStar.color, borderRadius: 99 }} />
+              </div>
+            </div>
+
+            {/* Projects list chips */}
+            <div style={{ fontSize: "0.68rem", color: "#666" }}>
+              <span style={{ display: "block", marginBottom: 4 }}>Recent Projects:</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {hoveredStar.projects.map((proj, pIdx) => (
+                  <span key={pIdx} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 4, padding: "2px 6px", fontSize: "0.62rem", color: "#aaa" }}>
+                    {proj}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -2140,55 +2960,316 @@ function GitHubSection() {
 }
 
 // ============================================================
-// WHAT I BUILD SECTION  (white bg, rounded top)
+// WHAT I BUILD SECTION
 // ============================================================
+// ============================================================
+// WHAT I BUILD SECTION
+// ============================================================
+const getServiceIcon = (title) => {
+  const t = title.toLowerCase();
+  if (t.includes("ai") || t.includes("machine") || t.includes("intel")) return Cpu;
+  if (t.includes("web") || t.includes("stack") || t.includes("full")) return Code2;
+  if (t.includes("ui") || t.includes("ux") || t.includes("design") || t.includes("interface")) return Layout;
+  if (t.includes("auto") || t.includes("script") || t.includes("bot") || t.includes("workflow")) return Smartphone;
+  return Code2;
+};
+
 function WhatIBuildSection() {
   const { data } = useAdmin();
+  const [activeCard, setActiveCard] = useState(null);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  // Dynamic viewport sizing for zero-lag mobile responsiveness
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Slow auto-rotation loop
+  useEffect(() => {
+    if (isPaused || activeCard !== null) return;
+    let animId;
+    const tick = () => {
+      setRotationAngle(prev => (prev + 0.002) % (Math.PI * 2));
+      animId = requestAnimationFrame(tick);
+    };
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [isPaused, activeCard]);
+
+  const services = data.whatIBuild || [];
+  const N = services.length;
+  
+  const isMobileSize = windowWidth < 640;
+  const rx = isMobileSize ? 130 : 220;
+  const ry = isMobileSize ? 55 : 90;
+  const cx = isMobileSize ? 160 : 250;
+  const cy = isMobileSize ? 160 : 250;
+  const containerSize = isMobileSize ? 320 : 500;
+  const nodeSize = isMobileSize ? 42 : 54;
+  const hubSize = isMobileSize ? 140 : 220;
+
+  // Calculate coordinates for nodes
+  const nodes = useMemo(() => {
+    return services.map((service, idx) => {
+      const angle = (2 * Math.PI * idx) / N + rotationAngle;
+      const x = cx + Math.cos(angle) * rx;
+      const y = cy + Math.sin(angle) * ry;
+      const depth = Math.sin(angle); // ranges from -1 (top/back) to 1 (bottom/front)
+      const color = service.color || "#a855f7";
+      return { ...service, x, y, angle, depth, color, index: idx };
+    });
+  }, [services, N, rotationAngle, cx, cy, rx, ry]);
+
+  const activeService = activeCard !== null ? nodes[activeCard] : null;
+
   return (
     <section id="what-i-build" style={{
-      background: "#ffffff",
-      borderRadius: "clamp(40px,5vw,60px) clamp(40px,5vw,60px) 0 0",
+      background: "#08070d",
       padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
-      marginTop: -1,
       position: "relative",
       overflow: "hidden",
     }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
-          <SectionHeading gradient={false} light>What I Build</SectionHeading>
-          <p style={{ color: "#666", marginTop: 16, maxWidth: 500, margin: "16px auto 0", fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>
-            I focus on creating systems that bridge the gap between functional logic and intelligent automation.
+      {/* Background glow effects */}
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80vw", height: "80vw", maxWidth: 900, background: "radial-gradient(circle, rgba(168,85,247,0.03) 0%, transparent 65%)", pointerEvents: "none", zIndex: 1 }} />
+
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
+        
+        {/* Section Heading */}
+        <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "48px" }}>
+          <SectionHeading>Capabilities</SectionHeading>
+          <p style={{ color: "#ef4444", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", marginTop: 16 }}>
+            What I Build
+          </p>
+          <p style={{ color: "#8b7e74", marginTop: 8, fontSize: "clamp(0.95rem,1.2vw,1.15rem)" }}>
+            Explore my core development competencies in the orbital map.
           </p>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
-          {data.whatIBuild.map((service, i) => {
-            const Icon = service.icon || Code2;
-            const fromLeft = i % 2 === 0;
-            return (
+
+        {/* Responsive Outer Wrapper for Orbit Map */}
+        <div 
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => { setIsPaused(false); setActiveCard(null); }}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: isMobileSize ? 360 : 520,
+            width: "100%",
+            overflow: "visible",
+            padding: "20px 0"
+          }}
+        >
+          {/* Scaling wrapper to make the layout responsive without blurry transform scale */}
+          <div style={{
+            position: "relative",
+            width: containerSize,
+            height: containerSize,
+            flexShrink: 0
+          }}>
+            {/* SVG Connecting lines & orbits */}
+            <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", zIndex: 2 }}>
+              {/* Outer orbital track boundary (Elliptical / Solar System) */}
+              <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
+              <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke="rgba(168,85,247,0.15)" strokeWidth="1.5" strokeDasharray="5,8" style={{ filter: "drop-shadow(0 0 4px rgba(168,85,247,0.4))" }} />
+
+              {/* Connecting rays from center to nodes */}
+              {nodes.map(node => {
+                const isActive = activeCard === node.index;
+                return (
+                  <g key={node.index}>
+                    <line
+                      x1={cx}
+                      y1={cy}
+                      x2={node.x}
+                      y2={node.y}
+                      stroke={isActive ? `${node.color}55` : "rgba(255, 255, 255, 0.08)"}
+                      strokeWidth={isActive ? 2 : 1}
+                      style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
+                    />
+                    
+                    {/* Glowing pulse particle on active connection path */}
+                    {isActive && (
+                      <motion.circle
+                        r={4}
+                        fill={node.color}
+                        initial={{ cx: cx, cy: cy }}
+                        animate={{ cx: node.x, cy: node.y }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        style={{ filter: `drop-shadow(0 0 6px ${node.color})` }}
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Central glassmorphic detail display hub */}
+            <div style={{
+              position: "absolute",
+              left: cx,
+              top: cy,
+              transform: "translate(-50%, -50%)",
+              width: hubSize,
+              height: hubSize,
+              borderRadius: "50%",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: isMobileSize ? 12 : 20
+            }}>
+              {/* Spinning technical HUD ring */}
               <motion.div
-                key={`${service.title}-${i}`}
-                initial={{ opacity: 0, x: fromLeft ? -50 : 50, y: 20 }}
-                whileInView={{ opacity: 1, x: 0, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.6, delay: i * 0.09, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                <motion.div
-                  whileHover={{ y: -10, boxShadow: `0 20px 40px rgba(0,0,0,0.12), 0 0 0 2px ${service.color || "#a855f7"}33` }}
-                  transition={{ duration: 0.3 }}
-                  style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 24, padding: "clamp(24px,2.5vw,40px)", height: "100%" }}
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 24, ease: "linear" }}
+                style={{
+                  position: "absolute",
+                  inset: isMobileSize ? -6 : -12,
+                  borderRadius: "50%",
+                  border: "1px dashed rgba(168, 85, 247, 0.2)",
+                  pointerEvents: "none"
+                }}
+              />
+              
+              {/* Central Glass panel */}
+              <div 
+                className="glass"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  background: "rgba(10, 10, 18, 0.85)",
+                  boxShadow: activeService 
+                    ? `0 0 35px ${activeService.color}20, inset 0 0 15px ${activeService.color}15`
+                    : "0 0 25px rgba(255,255,255,0.02)",
+                  transition: "box-shadow 0.4s"
+                }}
+              />
+
+              {/* Text / Detail content */}
+              <div style={{ position: "relative", zIndex: 12, width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <AnimatePresence mode="wait">
+                  {!activeService ? (
+                    <motion.div
+                      key="default"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+                    >
+                      <Sparkles size={isMobileSize ? 20 : 26} color="#a855f7" style={{ marginBottom: 8, filter: "drop-shadow(0 0 8px rgba(168,85,247,0.4))" }} />
+                      <h4 style={{ color: "white", fontSize: isMobileSize ? "0.75rem" : "0.85rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Core Hub</h4>
+                      <p style={{ color: "#666", fontSize: isMobileSize ? "0.6rem" : "0.68rem", marginTop: 4, padding: "0 10px", lineHeight: 1.4 }}>Hover any node to see details</p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={activeService.title}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+                    >
+                      {React.createElement(getServiceIcon(activeService.title), {
+                        size: isMobileSize ? 18 : 24,
+                        color: activeService.color,
+                        style: { marginBottom: 6, filter: `drop-shadow(0 0 8px ${activeService.color}60)` }
+                      })}
+                      <h4 style={{ color: "white", fontSize: isMobileSize ? "0.72rem" : "0.85rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                        {activeService.title}
+                      </h4>
+                      <p style={{ color: "#bbb", fontSize: isMobileSize ? "0.58rem" : "0.68rem", marginTop: 6, lineHeight: 1.3, padding: "0 5px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: isMobileSize ? 3 : 4, WebkitBoxOrient: "vertical" }}>
+                        {activeService.description}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Orbiting Capability Nodes */}
+            {nodes.map(node => {
+              const Icon = getServiceIcon(node.title);
+              const isActive = activeCard === node.index;
+              
+              // 3D depth calculation: scale and opacity based on node's depth
+              const scale = 0.82 + (node.depth + 1) * 0.12; // 0.82 to 1.06
+              const opacity = 0.55 + (node.depth + 1) * 0.225; // 0.55 to 1.0
+              const calculatedNodeSize = nodeSize * scale;
+
+              return (
+                <div
+                  key={node.index}
+                  style={{
+                    position: "absolute",
+                    left: node.x,
+                    top: node.y,
+                    transform: "translate(-50%, -50%)",
+                    zIndex: Math.round(15 + node.depth * 5),
+                    opacity: isActive ? 1 : opacity,
+                    transition: "opacity 0.3s, z-index 0.3s"
+                  }}
                 >
                   <motion.div
-                    whileHover={{ rotate: 15, scale: 1.15 }}
-                    style={{ marginBottom: 20, padding: 14, display: "inline-block", background: "rgba(0,0,0,0.04)", borderRadius: 16, color: service.color || S.purple, cursor: "default" }}
+                    onMouseEnter={() => setActiveCard(node.index)}
+                    whileHover={{ scale: 1.12 }}
+                    style={{
+                      position: "relative",
+                      width: calculatedNodeSize,
+                      height: calculatedNodeSize,
+                      borderRadius: "50%",
+                      background: isActive 
+                        ? `radial-gradient(circle at 30% 30%, ${node.color}, #0a0a12)`
+                        : "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.08), rgba(10, 10, 18, 0.95))",
+                      border: `1.5px solid ${isActive ? node.color : "rgba(255, 255, 255, 0.15)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: isActive ? "white" : "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      boxShadow: isActive 
+                        ? `0 0 25px ${node.color}70, inset 0 0 12px ${node.color}50`
+                        : "0 6px 14px rgba(0,0,0,0.6)",
+                      transition: "width 0.3s, height 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s, background 0.3s"
+                    }}
                   >
-                    <Icon size={28} />
+                    <Icon size={isMobileSize ? 16 : 20} />
+
+                    {/* Orbit title label - Pill glassmorphic format to prevent overlapping text issues */}
+                    <span style={{
+                      position: "absolute",
+                      top: calculatedNodeSize + 8,
+                      left: -70,
+                      width: 190,
+                      textAlign: "center",
+                      color: isActive ? "white" : "rgba(215, 226, 234, 0.75)",
+                      fontSize: isMobileSize ? "0.62rem" : "0.7rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      pointerEvents: "none",
+                      transition: "color 0.3s",
+                      background: "rgba(10, 10, 18, 0.8)",
+                      backdropFilter: "blur(6px)",
+                      WebkitBackdropFilter: "blur(6px)",
+                      border: `1px solid ${isActive ? node.color + "50" : "rgba(255, 255, 255, 0.08)"}`,
+                      padding: "3px 10px",
+                      borderRadius: 9999,
+                      display: "inline-block",
+                      boxShadow: isActive ? `0 0 10px ${node.color}25` : "0 4px 10px rgba(0,0,0,0.4)"
+                    }}>
+                      {node.title}
+                    </span>
                   </motion.div>
-                  <h3 style={{ color: "#0C0C0C", fontWeight: 700, fontSize: "clamp(1rem,1.8vw,1.3rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 12 }}>{service.title}</h3>
-                  <p style={{ color: "#666", lineHeight: 1.6, fontSize: "clamp(0.82rem,1.1vw,0.95rem)" }}>{service.description}</p>
-                </motion.div>
-              </motion.div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -2216,8 +3297,8 @@ function CertificationsSection() {
                 className="cert-card"
                 style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 28, padding: "clamp(20px,2vw,32px)", overflow: "hidden" }}
               >
-                <div style={{ width: 90, height: 90, borderRadius: 18, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(0,0,0,0.06)" }}>
-                  <img src={cert.image} alt={cert.title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
+                <div style={{ width: 90, height: 90, borderRadius: 18, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(0,0,0,0.06)", background: "rgba(0,0,0,0.03)" }}>
+                  <img src={cert.image} alt={cert.title} style={{ width: "100%", height: "100%", objectFit: "contain", transition: "transform 0.5s" }}
                     onMouseEnter={e => e.target.style.transform = "scale(1.1)"}
                     onMouseLeave={e => e.target.style.transform = "scale(1)"}
                   />
@@ -2246,180 +3327,359 @@ function CertificationsSection() {
 // ============================================================
 function ContactSection() {
   const { data } = useAdmin();
-  const [form, setForm]   = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("idle"); // idle | sent
-  const [errMsg, setErrMsg] = useState("");
+  const [ledText, setLedText] = useState("SELECT PRODUCT SLOT");
+  const [inputCode, setInputCode] = useState("");
+  const [dispensingCode, setDispensingCode] = useState(null);
+  const [trayCanister, setTrayCanister] = useState(null); // canister currently in the tray
+  const [status, setStatus] = useState("idle");
 
-  const adminEmail = ADMIN_EMAIL || data.personalInfo.email || "";
+  const adminEmail = data.personalInfo.email || ADMIN_EMAIL || "";
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      setErrMsg("Please fill in all fields."); return;
+  const products = useMemo(() => [
+    { code: "A1", label: "Email.exe", color: "#a855f7", icon: Mail },
+    { code: "B2", label: "LinkedIn.dll", color: "#22d3ee", icon: Linkedin },
+    { code: "C3", label: "GitHub.sh", color: "#10b981", icon: Github },
+    { code: "D4", label: "Resume.pdf", color: "#f59e0b", icon: FileText }
+  ], []);
+
+  const handleKeyClick = (key) => {
+    if (status === "dispensing") return;
+    
+    if (key === "CLEAR") {
+      setInputCode("");
+      setLedText("SELECT PRODUCT SLOT");
+    } else if (key === "ENTER") {
+      processSelection(inputCode.toUpperCase());
+    } else {
+      if (inputCode.length < 2) {
+        const newCode = inputCode + key;
+        setInputCode(newCode);
+        setLedText(`SLOT: ${newCode}`);
+      }
     }
-    setErrMsg("");
-    // Opens Gmail compose in new tab with all fields pre-filled
-    const result = sendEmail({ from_name: form.name, from_email: form.email, message: form.message });
-    if (result.ok) {
-      setStatus("sent");
-      setForm({ name: "", email: "", message: "" });
-      setTimeout(() => setStatus("idle"), 4000);
+  };
+
+  const processSelection = (code) => {
+    const prod = products.find(p => p.code === code);
+    if (!prod) {
+      setLedText("ERR: INVALID SLOT");
+      setInputCode("");
+      setTimeout(() => setLedText("SELECT PRODUCT SLOT"), 1500);
+      return;
     }
+
+    // Start dispensing sequence
+    setStatus("dispensing");
+    setInputCode("");
+    setLedText(`SHIPPING ${prod.code}...`);
+    setDispensingCode(prod.code);
+
+    // Canister falls down to tray
+    setTimeout(() => {
+      setDispensingCode(null);
+      setTrayCanister(prod);
+      setStatus("collect");
+      setLedText("COLLECT IN TRAY");
+    }, 1200);
+  };
+
+  const handleCollect = () => {
+    if (!trayCanister) return;
+
+    setLedText("OPENING CAPSULE...");
+    
+    setTimeout(() => {
+      const prod = trayCanister;
+      setTrayCanister(null);
+      setStatus("idle");
+      setLedText("PRODUCT DISPENSED");
+
+      // Actions based on product using correct admin details
+      if (prod.code === "A1") {
+        sendEmail({
+          to_email: adminEmail,
+          to_name: data.personalInfo.name,
+          from_name: "Visitor Pass Scanner",
+          from_email: "visitor@example.com",
+          message: `Hello! I dispensed your Email.exe capsule and wanted to connect with ${data.personalInfo.name || "you"}.`
+        });
+        setLedText("GMAIL INITIATED");
+      } else if (prod.code === "B2") {
+        window.open(data.personalInfo.linkedin, "_blank", "noopener,noreferrer");
+        setLedText("LINKEDIN OPENED");
+      } else if (prod.code === "C3") {
+        window.open(data.personalInfo.github, "_blank", "noopener,noreferrer");
+        setLedText("GITHUB OPENED");
+      } else if (prod.code === "D4") {
+        window.open(data.personalInfo.resumeLink || "#", "_blank", "noopener,noreferrer");
+        setLedText("RESUME OPENED");
+      }
+      
+      setTimeout(() => setLedText("SELECT PRODUCT SLOT"), 2500);
+    }, 800);
   };
 
   return (
     <section id="contact" style={{
       background: S.dark,
-      borderRadius: "clamp(40px,5vw,60px) clamp(40px,5vw,60px) 0 0",
+      borderTop: "1px solid rgba(255,255,255,0.06)",
       padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)",
-      position: "relative", overflow: "hidden",
+      position: "relative",
+      overflow: "hidden",
     }}>
-      <ParticlesBg count={12} />
-      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
+      <ParticlesBg count={10} />
+      
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
+        
+        {/* Section Heading */}
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
-          <SectionHeading>Contact</SectionHeading>
-          <p style={{ color: "#666", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>Let's build the future together.</p>
+          <SectionHeading>Contact Station</SectionHeading>
+          <p style={{ color: "#666", marginTop: 16, fontSize: "clamp(0.85rem,1.2vw,1rem)" }}>
+            Select a product canister from the vending machine slots or enter its slot code to connect.
+          </p>
         </FadeIn>
-        <GlassCard style={{ position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, background: "radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "clamp(32px,4vw,64px)", position: "relative" }}>
 
-            {/* ── Info panel — slides from left ── */}
-            <SlideLeft delay={0.1}>
-              <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.4rem,3vw,2.8rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2, marginBottom: 28 }}>
-                Let's Build <br /><span className="text-gradient">The Future</span>
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 28 }}>
-                {/* Email — clicking opens Gmail compose */}
-                <motion.a
-                  href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  whileHover={{ x: 4 }}
-                  style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}
-                >
-                  <motion.div whileHover={{ scale: 1.15, rotate: -8 }} className="glass"
-                    style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: S.purple, flexShrink: 0 }}>
-                    <Mail size={20} />
-                  </motion.div>
-                  <div>
-                    <p style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>Email Me</p>
-                    <p style={{ color: "white", fontWeight: 500, fontSize: "clamp(0.82rem,1.1vw,0.95rem)", wordBreak: "break-all" }}>{adminEmail}</p>
-                  </div>
-                </motion.a>
-                <motion.div whileHover={{ x: 4 }} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div className="glass" style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", flexShrink: 0 }}>
-                    <MapPin size={20} />
-                  </div>
-                  <div>
-                    <p style={{ color: "#666", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>Location</p>
-                    <p style={{ color: "white", fontWeight: 500, fontSize: "clamp(0.82rem,1.1vw,0.95rem)" }}>{data.personalInfo.location}</p>
-                  </div>
-                </motion.div>
-              </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {data.socialLinks.slice(0, 3).map(social => (
-                  <motion.a key={social.name} whileHover={{ y: -5, scale: 1.1 }}
-                    href={social.href} target="_blank" rel="noopener noreferrer"
-                    className="glass"
-                    style={{ width: 46, height: 46, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", transition: "color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = S.cyan}
-                    onMouseLeave={e => e.currentTarget.style.color = "#888"}
-                  ><social.icon size={20} /></motion.a>
-                ))}
-              </div>
-            </SlideLeft>
+        {/* Vending Machine Chassis */}
+        <div style={{
+          maxWidth: 680,
+          margin: "0 auto",
+          background: "linear-gradient(135deg, #181824 0%, #0c0c14 100%)",
+          border: "4px solid #1a1a2e",
+          borderRadius: 24,
+          boxShadow: "0 30px 60px rgba(0,0,0,0.8), 0 0 40px rgba(168,85,247,0.1), inset 0 0 30px rgba(255,255,255,0.05)",
+          padding: "32px 24px",
+          display: "grid",
+          gridTemplateColumns: "1fr 180px",
+          gap: 24,
+          position: "relative"
+        }}>
+          {/* Mobile responsive split */}
+          <style>{`
+            @media (max-width: 600px) {
+              #contact > div > div {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
 
-            {/* ── Form — slides from right ── */}
-            <SlideRight delay={0.2}>
-              <motion.form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Name + Email row */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14 }}>
-                  {[
-                    { key: "name",  label: "Full Name",     placeholder: "Your Name",       type: "text"  },
-                    { key: "email", label: "Email Address", placeholder: "you@example.com", type: "email" },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label style={{ display: "block", color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 7 }}>{f.label}</label>
-                      <input
-                        type={f.type}
-                        placeholder={f.placeholder}
-                        value={form[f.key]}
-                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                        style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 18px", color: "white", outline: "none", fontSize: "16px", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s" }}
-                        onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.5)"}
-                        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                      />
+          {/* Vending Compartment (Glass Cabinet) */}
+          <div style={{
+            background: "rgba(0, 0, 0, 0.4)",
+            border: "2px solid #252538",
+            borderRadius: 16,
+            padding: 20,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 400,
+            position: "relative",
+            boxShadow: "inset 0 0 20px rgba(0,0,0,0.8)"
+          }}>
+            {/* Glass shine effect */}
+            <div style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "50%",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 70%)",
+              borderRadius: "14px 14px 0 0",
+              pointerEvents: "none"
+            }} />
+
+            {/* Grid of Slots */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 20,
+              height: 260
+            }}>
+              {products.map((prod, i) => {
+                const Icon = prod.icon;
+                const isDispensing = dispensingCode === prod.code;
+
+                return (
+                  <div
+                    key={prod.code}
+                    onClick={() => processSelection(prod.code)}
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      border: `1px solid ${prod.color}22`,
+                      borderRadius: 12,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                      cursor: "pointer",
+                      boxShadow: `inset 0 0 10px ${prod.color}05`,
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = prod.color; e.currentTarget.style.background = `${prod.color}0a`; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = `${prod.color}22`; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                  >
+                    {/* Falling canister animation */}
+                    <AnimatePresence>
+                      {!isDispensing && (
+                        <motion.div
+                          exit={{ y: 200, scale: 0.8, opacity: 0 }}
+                          transition={{ duration: 1.0, ease: "easeIn" }}
+                          style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+                        >
+                          {/* Spiral coil representation */}
+                          <div style={{ width: 44, height: 16, border: "2px solid rgba(255,255,255,0.1)", borderBottom: "none", borderRadius: "50% 50% 0 0", marginBottom: 8 }} />
+                          {/* Product canister */}
+                          <div style={{
+                            width: 44,
+                            height: 60,
+                            background: `linear-gradient(to bottom, #222, ${prod.color}aa, #222)`,
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            borderRadius: 6,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            boxShadow: `0 4px 10px ${prod.color}33`
+                          }}>
+                            <Icon size={20} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Channel tags and Code tags */}
+                    <div style={{
+                      marginTop: 8,
+                      fontFamily: "monospace",
+                      fontSize: "0.68rem",
+                      background: "rgba(0,0,0,0.5)",
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      color: "#aaa",
+                      textAlign: "center",
+                      width: "85%",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    }}>
+                      <span style={{ color: prod.color, fontWeight: "bold" }}>{prod.code}</span> | {prod.label.split('.')[0]}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                {/* Message */}
-                <div>
-                  <label style={{ display: "block", color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 7 }}>Your Message</label>
-                  <textarea
-                    placeholder="How can I help you today?"
-                    rows={4}
-                    value={form.message}
-                    onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                    style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 18px", color: "white", outline: "none", fontSize: "16px", resize: "vertical", fontFamily: "'Kanit', sans-serif", transition: "border-color 0.2s", minHeight: 120 }}
-                    onFocus={e => e.target.style.borderColor = "rgba(168,85,247,0.5)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                  />
-                </div>
-
-                {/* Validation error */}
-                <AnimatePresence>
-                  {errMsg && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10 }}
-                    >
-                      <AlertCircle size={14} color="#ef4444" />
-                      <span style={{ color: "#ef4444", fontSize: "0.82rem" }}>{errMsg}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* ── SEND TRANSMISSION button ── */}
-                <motion.button
-                  type="submit"
-                  disabled={status === "sent"}
-                  whileHover={status === "idle" ? { scale: 1.03, y: -2 } : {}}
-                  whileTap={status === "idle" ? { scale: 0.97 } : {}}
+            {/* Delivery Tray / Flap at the bottom */}
+            <div
+              onClick={handleCollect}
+              style={{
+                height: 70,
+                background: "#121218",
+                border: `2px solid ${trayCanister ? "#22d3ee" : "#252538"}`,
+                borderRadius: 10,
+                boxShadow: trayCanister
+                  ? "inset 0 0 15px rgba(34, 211, 238, 0.4), 0 0 10px rgba(34, 211, 238, 0.2)"
+                  : "inset 0 0 8px rgba(0,0,0,0.8)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: trayCanister ? "pointer" : "default",
+                transition: "all 0.3s"
+              }}
+            >
+              {trayCanister ? (
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
                   style={{
-                    position: "relative", overflow: "hidden",
-                    background: status === "sent"
-                      ? "linear-gradient(135deg, #059669, #10b981)"
-                      : "linear-gradient(135deg, #B600A8 0%, #7621B0 50%, #BE4C00 100%)",
-                    border: "none", borderRadius: 18,
-                    padding: "18px 28px",
-                    color: "white", fontWeight: 800,
-                    textTransform: "uppercase", letterSpacing: "0.15em",
-                    fontSize: "clamp(0.78rem, 1vw, 0.88rem)",
-                    cursor: status === "sent" ? "default" : "pointer",
-                    fontFamily: "'Kanit', sans-serif",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    boxShadow: status === "sent"
-                      ? "0 0 30px rgba(16,185,129,0.4)"
-                      : "0 4px 24px rgba(182,0,168,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset",
-                    transition: "box-shadow 0.3s, background 0.3s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "#22d3ee",
+                    fontFamily: "monospace",
+                    fontSize: "0.8rem",
+                    fontWeight: "bold"
                   }}
                 >
-                  {/* Shimmer sweep — only on idle */}
-                  {status === "idle" && (
-                    <motion.div
-                      animate={{ x: ["-100%", "200%"] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1.5 }}
-                      style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)", pointerEvents: "none" }}
-                    />
-                  )}
-                  {status === "sent" ? <CheckCircle size={17} /> : <Send size={17} />}
-                  <span>{status === "sent" ? "Redirecting to Gmail…" : "Send Transmission"}</span>
-                </motion.button>
-              </motion.form>
-            </SlideRight>
+                  <span>[CLICK TO OPEN {trayCanister.code}]</span>
+                </motion.div>
+              ) : (
+                <span style={{ fontFamily: "monospace", fontSize: "0.72rem", color: "#444" }}>DELIVERY TRAY</span>
+              )}
+            </div>
           </div>
-        </GlassCard>
+
+          {/* Keypad and Control Console panel */}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16
+          }}>
+            {/* LED Screen */}
+            <div style={{
+              background: "#040408",
+              border: "1px solid rgba(168, 85, 247, 0.3)",
+              borderRadius: 10,
+              padding: 12,
+              minHeight: 64,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "inset 0 0 10px rgba(168,85,247,0.2)"
+            }}>
+              <span style={{
+                fontFamily: "monospace",
+                fontSize: "0.78rem",
+                color: "#a855f7",
+                textShadow: "0 0 3px rgba(168, 85, 247, 0.6)",
+                textAlign: "center"
+              }}>
+                {ledText}
+              </span>
+            </div>
+
+            {/* Numerical Keypad Grid */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 8,
+              background: "rgba(0,0,0,0.2)",
+              padding: 10,
+              borderRadius: 12,
+              border: "1px solid #1a1a2e"
+            }}>
+              {["A", "B", "C", "1", "2", "3", "D", "4", "CLEAR", "0", "ENTER"].map((key) => {
+                const isEnter = key === "ENTER";
+                const isClear = key === "CLEAR";
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleKeyClick(key)}
+                    style={{
+                      gridColumn: isEnter ? "span 2" : isClear ? "span 1" : "auto",
+                      background: isEnter ? "rgba(16, 185, 129, 0.15)" : isClear ? "rgba(239, 68, 68, 0.15)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${isEnter ? "rgba(16, 185, 129, 0.3)" : isClear ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.06)"}`,
+                      borderRadius: 8,
+                      padding: 10,
+                      color: isEnter ? "#10b981" : isClear ? "#ef4444" : "white",
+                      fontFamily: "monospace",
+                      fontSize: "0.8rem",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      transition: "all 0.15s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = isEnter ? "rgba(16, 185, 129, 0.25)" : isClear ? "rgba(239, 68, 68, 0.25)" : "rgba(255,255,255,0.1)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isEnter ? "rgba(16, 185, 129, 0.15)" : isClear ? "rgba(239, 68, 68, 0.15)" : "rgba(255,255,255,0.03)"; }}
+                  >
+                    {key}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
       </div>
     </section>
   );

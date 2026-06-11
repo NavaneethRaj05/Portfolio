@@ -58,11 +58,11 @@ export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "";
  * Opens Gmail compose in a new tab with all visitor details
  * pre-filled. No EmailJS, no backend needed.
  */
-export function sendEmail({ from_name, from_email, message }) {
-  const to      = encodeURIComponent(ADMIN_EMAIL);
+export function sendEmail({ to_email, to_name, from_name, from_email, message }) {
+  const to      = encodeURIComponent(to_email || ADMIN_EMAIL);
   const subject = encodeURIComponent(`Portfolio Message from ${from_name}`);
   const body    = encodeURIComponent(
-    `Hi Navaneeth,\n\nYou have a new portfolio message.\n\n` +
+    `Hi ${to_name || "Navaneeth"},\n\nYou have a new portfolio message.\n\n` +
     `Name:    ${from_name}\n` +
     `Email:   ${from_email}\n\n` +
     `Message:\n${message}\n`
