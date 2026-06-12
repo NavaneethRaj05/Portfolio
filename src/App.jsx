@@ -187,18 +187,18 @@ const personalInfo = {
   role: "AI MERN Stack Developer",
   tagline: "Building Intelligent Web Experiences",
   heroDescription: "An ambitious Full Stack Developer and AI Enthusiast focused on building production-grade web applications. I bridge the gap between functional web platforms and cutting-edge artificial intelligence through continuous learning and project-driven development.",
-  email: "navaneeth@example.com",
+  email: "navaneethraj05@gmail.com",
   location: "Silicon Valley, CA",
   github: "https://github.com/NavaneethRaj05",
-  linkedin: "https://linkedin.com/in/navaneethraj",
+  linkedin: "https://www.linkedin.com/in/navaneeth-raj05?utm_source=share_via&utm_content=profile&utm_medium=member_android",
   resumeLink: "#",
 };
 
 const socialLinks = [
   { name: "GitHub", href: "https://github.com/NavaneethRaj05", icon: Github },
-  { name: "LinkedIn", href: "https://linkedin.com/in/navaneethraj", icon: Linkedin },
+  { name: "LinkedIn", href: "https://www.linkedin.com/in/navaneeth-raj05?utm_source=share_via&utm_content=profile&utm_medium=member_android", icon: Linkedin },
   { name: "Twitter", href: "https://twitter.com/navaneethraj", icon: Twitter },
-  { name: "Email", href: "mailto:navaneeth@example.com", icon: Mail },
+  { name: "Email", href: "mailto:navaneethraj05@gmail.com", icon: Mail },
 ];
 
 const education = [
@@ -3576,14 +3576,8 @@ function ContactSection() {
 
       // Actions based on product using correct admin details
       if (prod.code === "A1") {
-        sendEmail({
-          to_email: adminEmail,
-          to_name: data.personalInfo.name,
-          from_name: "Visitor Pass Scanner",
-          from_email: "visitor@example.com",
-          message: `Hello! I dispensed your Email.exe capsule and wanted to connect with ${data.personalInfo.name || "you"}.`
-        });
-        setLedText("GMAIL INITIATED");
+        window.location.href = `mailto:${adminEmail}`;
+        setLedText("EMAIL CLIENT OPENED");
       } else if (prod.code === "B2") {
         window.open(data.personalInfo.linkedin, "_blank", "noopener,noreferrer");
         setLedText("LINKEDIN OPENED");
