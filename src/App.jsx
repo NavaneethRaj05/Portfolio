@@ -12,7 +12,7 @@ import {
   ExternalLink, Star, GitFork, MapPin, Send,
   Sparkles, BookOpen, Trophy, Code, Smartphone, Menu,
   Plus, Trash2, Palette, Settings, CheckCircle, AlertCircle,
-  Key, Database, RefreshCw, FileText
+  Key, Database, RefreshCw, FileText, ArrowUp, ArrowDown, Hash
 } from "lucide-react";
 import { mongoLoad, mongoSave, sendEmail, mongoConfigured, ADMIN_EMAIL } from "./services.js";
 
@@ -219,10 +219,10 @@ const skills = {
 };
 
 const projects = [
-  { id: 1, title: "AI Codebase Explainer", description: "An intelligent tool that scans repository structures and provides plain-English explanations of complex logic using Gemini integration.", tech: ["React", "Node.js", "Google AI", "Tailwind"], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", icon: Terminal, github: "#", live: "#", featured: true },
-  { id: 2, title: "Smart Complaint Resolution", description: "Autonomous support agent that categorizes, prioritizes, and drafts responses for customer inquiries using sentiment analysis.", tech: ["MERN Stack", "OpenAI", "Redis", "Docker"], image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1000", icon: Cpu, github: "#", live: "#", featured: true },
-  { id: 3, title: "AI Personal Assistant Chat", description: "Full-featured chat application with memory storage, file analysis capabilities, and real-time streaming responses.", tech: ["Next.js", "MongoDB", "LangChain", "Socket.io"], image: "https://images.unsplash.com/photo-1587560699334-cc4ff634909a?auto=format&fit=crop&q=80&w=1000", icon: MessageSquare, github: "#", live: "#", featured: false },
-  { id: 4, title: "Event Management Platform", description: "End-to-end event hosting system with automated scheduling, ticket generation, and attendee engagement analytics.", tech: ["React", "Firebase", "Node.js", "Stripe"], image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=1000", icon: Calendar, github: "#", live: "#", featured: false },
+  { id: 1, priority: 1, title: "AI Codebase Explainer", description: "An intelligent tool that scans repository structures and provides plain-English explanations of complex logic using Gemini integration.", tech: ["React", "Node.js", "Google AI", "Tailwind"], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", icon: Terminal, github: "#", live: "#", featured: true },
+  { id: 2, priority: 2, title: "Smart Complaint Resolution", description: "Autonomous support agent that categorizes, prioritizes, and drafts responses for customer inquiries using sentiment analysis.", tech: ["MERN Stack", "OpenAI", "Redis", "Docker"], image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1000", icon: Cpu, github: "#", live: "#", featured: true },
+  { id: 3, priority: 3, title: "AI Personal Assistant Chat", description: "Full-featured chat application with memory storage, file analysis capabilities, and real-time streaming responses.", tech: ["Next.js", "MongoDB", "LangChain", "Socket.io"], image: "https://images.unsplash.com/photo-1587560699334-cc4ff634909a?auto=format&fit=crop&q=80&w=1000", icon: MessageSquare, github: "#", live: "#", featured: false },
+  { id: 4, priority: 4, title: "Event Management Platform", description: "End-to-end event hosting system with automated scheduling, ticket generation, and attendee engagement analytics.", tech: ["React", "Firebase", "Node.js", "Stripe"], image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=1000", icon: Calendar, github: "#", live: "#", featured: false },
 ];
 
 const journey = [
@@ -233,8 +233,8 @@ const journey = [
 ];
 
 const certifications = [
-  { title: "Google Cloud Certified - Professional Cloud Architect", issuer: "Google Cloud", year: "2023", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
-  { title: "Deep Learning Specialization", issuer: "DeepLearning.AI", year: "2022", image: "https://images.unsplash.com/photo-1509228468518-180dd482195e?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
+  { priority: 1, title: "Google Cloud Certified - Professional Cloud Architect", issuer: "Google Cloud", year: "2023", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
+  { priority: 2, title: "Deep Learning Specialization", issuer: "DeepLearning.AI", year: "2022", image: "https://images.unsplash.com/photo-1509228468518-180dd482195e?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
 ];
 
 const whatIBuild = [
@@ -1164,21 +1164,82 @@ function AdminPortal() {
             )}
             {activeSection === "projects" && (
               <div>
-                <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Projects</h3>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                  <h3 style={{ color: "white", fontWeight: 700, fontFamily: "'Kanit', sans-serif" }}>Projects</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 9999, padding: "4px 12px" }}>
+                    <Hash size={12} color={S.purple} />
+                    <span style={{ color: S.purple, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Priority Order</span>
+                  </div>
+                </div>
+                <p style={{ color: "#555", fontSize: "0.75rem", marginBottom: 16, lineHeight: 1.4 }}>Lower number = shown first. Use ↑↓ arrows or type a priority number.</p>
                 {data.projects.map((proj, i) => card(
                   <div key={proj.id || i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <p style={{ color: "#aaa", fontWeight: 600 }}>{proj.title}</p>
+                    {/* Title row with priority badge */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white", fontSize: "0.72rem", fontWeight: 900, flexShrink: 0, boxShadow: "0 2px 8px rgba(168,85,247,0.4)" }}>
+                        {proj.priority ?? i + 1}
+                      </div>
+                      <p style={{ color: "#aaa", fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proj.title}</p>
+                    </div>
+                    {/* Action buttons row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <button
+                        onClick={() => {
+                          if (i === 0) return;
+                          const n = [...data.projects];
+                          [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
+                          updateData("projects", n);
+                        }}
+                        disabled={i === 0}
+                        style={{ background: i === 0 ? "rgba(255,255,255,0.03)" : "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8, padding: "7px 10px", color: i === 0 ? "#444" : S.purple, cursor: i === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Up"
+                      >
+                        <ArrowUp size={14} /> Up
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (i === data.projects.length - 1) return;
+                          const n = [...data.projects];
+                          [n[i], n[i + 1]] = [n[i + 1], n[i]];
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
+                          updateData("projects", n);
+                        }}
+                        disabled={i === data.projects.length - 1}
+                        style={{ background: i === data.projects.length - 1 ? "rgba(255,255,255,0.03)" : "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8, padding: "7px 10px", color: i === data.projects.length - 1 ? "#444" : S.purple, cursor: i === data.projects.length - 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Down"
+                      >
+                        <ArrowDown size={14} /> Down
+                      </button>
+                      <div style={{ flex: 1 }} />
                       <button
                         onClick={() => {
                           const n = data.projects.filter((_, idx) => idx !== i);
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
                           updateData("projects", n);
                         }}
-                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, padding: "7px 10px", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600, transition: "all 0.2s" }}
                         title="Delete Project"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} /> Delete
                       </button>
+                    </div>
+                    {/* Priority number field */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: "block", color: "#888", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Priority (1 = shown first)</label>
+                      <input
+                        type="number" min="1"
+                        value={proj.priority ?? i + 1}
+                        onChange={e => {
+                          const val = parseInt(e.target.value) || 1;
+                          const n = [...data.projects];
+                          n[i] = { ...n[i], priority: val };
+                          updateData("projects", n);
+                        }}
+                        style={{ width: "120px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "10px 14px", color: S.purple, outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "1rem", fontWeight: 700 }}
+                        onFocus={e => e.target.style.borderColor = S.purple}
+                        onBlur={e => e.target.style.borderColor = "#333"}
+                      />
                     </div>
                     {field("Title", proj.title, v => { const n = [...data.projects]; n[i] = { ...n[i], title: v }; updateData("projects", n); })}
                     {field("Description", proj.description, v => { const n = [...data.projects]; n[i] = { ...n[i], description: v }; updateData("projects", n); }, "text", 3)}
@@ -1235,7 +1296,8 @@ function AdminPortal() {
                 ))}
                 <button
                   onClick={() => {
-                    const n = [...data.projects, { id: Date.now(), title: "New Project", description: "Project Description", tech: [], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", github: "#", live: "#", icon: Briefcase }];
+                    const nextPriority = data.projects.length + 1;
+                    const n = [...data.projects, { id: Date.now(), priority: nextPriority, title: "New Project", description: "Project Description", tech: [], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", github: "#", live: "#", icon: Briefcase }];
                     updateData("projects", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1285,21 +1347,82 @@ function AdminPortal() {
             )}
             {activeSection === "certifications" && (
               <div>
-                <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Certifications</h3>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                  <h3 style={{ color: "white", fontWeight: 700, fontFamily: "'Kanit', sans-serif" }}>Certifications</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 9999, padding: "4px 12px" }}>
+                    <Hash size={12} color={S.cyan} />
+                    <span style={{ color: S.cyan, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Priority Order</span>
+                  </div>
+                </div>
+                <p style={{ color: "#555", fontSize: "0.75rem", marginBottom: 16, lineHeight: 1.4 }}>Lower number = shown first. Use ↑↓ arrows or type a priority number.</p>
                 {data.certifications.map((cert, i) => card(
                   <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <p style={{ color: "#aaa", fontWeight: 600 }}>{cert.title}</p>
+                    {/* Title row with priority badge */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #22d3ee, #0891b2)", color: "white", fontSize: "0.72rem", fontWeight: 900, flexShrink: 0, boxShadow: "0 2px 8px rgba(34,211,238,0.35)" }}>
+                        {cert.priority ?? i + 1}
+                      </div>
+                      <p style={{ color: "#aaa", fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cert.title}</p>
+                    </div>
+                    {/* Action buttons row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <button
+                        onClick={() => {
+                          if (i === 0) return;
+                          const n = [...data.certifications];
+                          [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                          n.forEach((c, idx) => { n[idx] = { ...c, priority: idx + 1 }; });
+                          updateData("certifications", n);
+                        }}
+                        disabled={i === 0}
+                        style={{ background: i === 0 ? "rgba(255,255,255,0.03)" : "rgba(34,211,238,0.15)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8, padding: "7px 10px", color: i === 0 ? "#444" : S.cyan, cursor: i === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Up"
+                      >
+                        <ArrowUp size={14} /> Up
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (i === data.certifications.length - 1) return;
+                          const n = [...data.certifications];
+                          [n[i], n[i + 1]] = [n[i + 1], n[i]];
+                          n.forEach((c, idx) => { n[idx] = { ...c, priority: idx + 1 }; });
+                          updateData("certifications", n);
+                        }}
+                        disabled={i === data.certifications.length - 1}
+                        style={{ background: i === data.certifications.length - 1 ? "rgba(255,255,255,0.03)" : "rgba(34,211,238,0.15)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8, padding: "7px 10px", color: i === data.certifications.length - 1 ? "#444" : S.cyan, cursor: i === data.certifications.length - 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Down"
+                      >
+                        <ArrowDown size={14} /> Down
+                      </button>
+                      <div style={{ flex: 1 }} />
                       <button
                         onClick={() => {
                           const n = data.certifications.filter((_, idx) => idx !== i);
+                          n.forEach((c, idx) => { n[idx] = { ...c, priority: idx + 1 }; });
                           updateData("certifications", n);
                         }}
-                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, padding: "7px 10px", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600, transition: "all 0.2s" }}
                         title="Delete Certification"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} /> Delete
                       </button>
+                    </div>
+                    {/* Priority number field */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: "block", color: "#888", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Priority (1 = shown first)</label>
+                      <input
+                        type="number" min="1"
+                        value={cert.priority ?? i + 1}
+                        onChange={e => {
+                          const val = parseInt(e.target.value) || 1;
+                          const n = [...data.certifications];
+                          n[i] = { ...n[i], priority: val };
+                          updateData("certifications", n);
+                        }}
+                        style={{ width: "120px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "10px 14px", color: S.cyan, outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "1rem", fontWeight: 700 }}
+                        onFocus={e => e.target.style.borderColor = S.cyan}
+                        onBlur={e => e.target.style.borderColor = "#333"}
+                      />
                     </div>
                     {field("Title", cert.title, v => { const n = [...data.certifications]; n[i] = { ...n[i], title: v }; updateData("certifications", n); })}
                     {field("Issuer", cert.issuer, v => { const n = [...data.certifications]; n[i] = { ...n[i], issuer: v }; updateData("certifications", n); })}
@@ -1355,7 +1478,8 @@ function AdminPortal() {
                 ))}
                 <button
                   onClick={() => {
-                    const n = [...data.certifications, { title: "New Certification", issuer: "Issuer", year: "2026", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" }];
+                    const nextPriority = data.certifications.length + 1;
+                    const n = [...data.certifications, { priority: nextPriority, title: "New Certification", issuer: "Issuer", year: "2026", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" }];
                     updateData("certifications", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1930,6 +2054,15 @@ function ProjectsSection() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Sort projects by priority (lowest = first), items without priority go last
+  const sortedProjects = useMemo(() => {
+    return [...data.projects].sort((a, b) => {
+      const pa = a.priority ?? Infinity;
+      const pb = b.priority ?? Infinity;
+      return pa - pb;
+    });
+  }, [data.projects]);
+
   const [cardPositions, setCardPositions] = useState([
     { x: 40, y: 30, rot: -4 },
     { x: 480, y: 15, rot: 5 },
@@ -1975,7 +2108,7 @@ function ProjectsSection() {
 
         {isMobile ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 32, alignItems: "center" }}>
-            {data.projects.map((project, i) => {
+            {sortedProjects.map((project, i) => {
               return (
                 <div key={project.id || i} style={{
                   background: "#faf9f6",
@@ -2067,7 +2200,7 @@ function ProjectsSection() {
               })}
             </svg>
 
-            {data.projects.map((project, i) => {
+            {sortedProjects.map((project, i) => {
               const pos = cardPositions[i];
               if (!pos) return null;
 
@@ -3461,6 +3594,15 @@ function WhatIBuildSection() {
 // ============================================================
 function CertificationsSection() {
   const { data } = useAdmin();
+
+  // Sort certifications by priority (lowest = first), items without priority go last
+  const sortedCertifications = useMemo(() => {
+    return [...data.certifications].sort((a, b) => {
+      const pa = a.priority ?? Infinity;
+      const pb = b.priority ?? Infinity;
+      return pa - pb;
+    });
+  }, [data.certifications]);
   return (
     <section id="certifications" style={{ background: "#ffffff", padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -3469,7 +3611,7 @@ function CertificationsSection() {
           <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, #a855f7, #22d3ee)", borderRadius: 9999, margin: "16px auto 0" }} />
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
-          {data.certifications.map((cert, i) => (
+          {sortedCertifications.map((cert, i) => (
             <FadeIn key={i} delay={i * 0.1} y={30}>
               <motion.div
                 whileHover={{ y: -6, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
