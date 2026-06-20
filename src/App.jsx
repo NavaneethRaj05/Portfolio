@@ -15,6 +15,7 @@ import {
   Key, Database, RefreshCw, FileText, ArrowUp, ArrowDown, Hash
 } from "lucide-react";
 import { mongoLoad, mongoSave, sendEmail, mongoConfigured, ADMIN_EMAIL } from "./services.js";
+import { Analytics } from "@vercel/analytics/react";
 
 // ============================================================
 // GOOGLE FONT + GLOBAL STYLES
@@ -4070,6 +4071,7 @@ export default function App() {
   return (
     <AdminProvider>
       <AppContent />
+      <Analytics />
     </AdminProvider>
   );
 }
