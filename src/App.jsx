@@ -2523,7 +2523,6 @@ function ProjectsSection() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Sort projects by priority (lowest = first), items without priority go last
   const sortedProjects = useMemo(() => {
     return [...data.projects].sort((a, b) => {
       const pa = a.priority ?? Infinity;
@@ -2532,18 +2531,78 @@ function ProjectsSection() {
     });
   }, [data.projects]);
 
-  const [cardPositions, setCardPositions] = useState([
-    { x: 40, y: 30, rot: -4 },
-    { x: 480, y: 15, rot: 5 },
-    { x: 100, y: 310, rot: 6 },
-    { x: 540, y: 290, rot: -3 }
-  ]);
+  const [cardPositions, setCardPositions] = useState(() => {
+    const defaults = [
+      { x: 40, y: 30, rot: -4 },
+      { x: 480, y: 15, rot: 5 },
+      { x: 100, y: 310, rot: 6 },
+      { x: 540, y: 290, rot: -3 },
+      { x: 840, y: 150, rot: -5 },
+      { x: 860, y: 430, rot: 3 }
+    ];
+    const initialCount = data?.projects?.length || 4;
+    const initialPositions = [];
+    for (let i = 0; i < initialCount; i++) {
+      if (defaults[i]) {
+        initialPositions.push(defaults[i]);
+      } else {
+        const row = Math.floor(i / 3);
+        const col = i % 3;
+        const xOffsets = [40, 80, 60];
+        const rotValues = [-4, 5, -2, 6, -3, 4];
+        const x = col * 400 + (xOffsets[i % 3] || 50) + ((i * 15) % 40) - 20;
+        const y = row * 290 + 20 + ((i * 10) % 30);
+        const rot = rotValues[i % rotValues.length];
+        initialPositions.push({ x, y, rot });
+      }
+    }
+    return initialPositions;
+  });
+
+  useEffect(() => {
+    const count = sortedProjects.length;
+    setCardPositions(prev => {
+      if (prev.length === count) return prev;
+      const next = [...prev];
+      const defaults = [
+        { x: 40, y: 30, rot: -4 },
+        { x: 480, y: 15, rot: 5 },
+        { x: 100, y: 310, rot: 6 },
+        { x: 540, y: 290, rot: -3 },
+        { x: 840, y: 150, rot: -5 },
+        { x: 860, y: 430, rot: 3 }
+      ];
+      
+      for (let i = 0; i < count; i++) {
+        if (next[i] === undefined) {
+          if (defaults[i]) {
+            next[i] = defaults[i];
+          } else {
+            const row = Math.floor(i / 3);
+            const col = i % 3;
+            const xOffsets = [40, 80, 60];
+            const rotValues = [-4, 5, -2, 6, -3, 4];
+            const x = col * 400 + (xOffsets[i % 3] || 50) + ((i * 15) % 40) - 20;
+            const y = row * 290 + 20 + ((i * 10) % 30);
+            const rot = rotValues[i % rotValues.length];
+            next[i] = { x, y, rot };
+          }
+        }
+      }
+      
+      if (next.length > count) {
+        next.splice(count);
+      }
+      
+      return next;
+    });
+  }, [sortedProjects]);
 
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const threads = useMemo(() => {
     const list = [];
-    const projs = data.projects;
+    const projs = sortedProjects;
     for (let i = 0; i < projs.length; i++) {
       for (let j = i + 1; j < projs.length; j++) {
         const shared = projs[i].tech.filter(t => projs[j].tech.includes(t));
@@ -2553,7 +2612,13 @@ function ProjectsSection() {
       }
     }
     return list;
-  }, [data.projects]);
+  }, [sortedProjects]);
+
+  const boardHeight = useMemo(() => {
+    if (cardPositions.length === 0) return 800;
+    const maxY = Math.max(...cardPositions.map(p => p.y));
+    return Math.max(800, maxY + 370);
+  }, [cardPositions]);
 
   return (
     <section id="projects" style={{
@@ -2580,28 +2645,58 @@ function ProjectsSection() {
             {sortedProjects.map((project, i) => {
               return (
                 <div key={project.id || i} style={{
+                  position: "relative",
                   background: "#faf9f6",
                   border: "1px solid rgba(0,0,0,0.1)",
                   boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-                  padding: "16px 16px 28px 16px",
+                  padding: "24px 16px 24px 16px",
                   borderRadius: 2,
                   maxWidth: 340,
-                  width: "100%",
-                  color: "#22d3ee"
+                  width: "100%"
                 }}>
+                  {/* Pin */}
+                  <div style={{
+                    position: "absolute",
+                    top: 10,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    background: "#ef444499",
+                    border: "2px solid #fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
+                    zIndex: 20
+                  }} />
+
                   <div style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden", background: "#faf9f6", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {project.image && <img src={project.image} alt={project.title} style={{ width: "100%", height: "100%", objectFit: "contain" }} />}
                   </div>
-                  <h3 style={{ fontFamily: "monospace", fontSize: "1.1rem", fontWeight: "bold", color: "#222", margin: "0 0 8px 0" }}>
-                    # {project.title.toUpperCase()}
+
+                  <h3 style={{
+                    fontFamily: "monospace",
+                    fontSize: "0.95rem",
+                    fontWeight: 900,
+                    color: "#222",
+                    margin: "0 0 6px 0",
+                    textTransform: "uppercase"
+                  }}>
+                    # {project.title}
                   </h3>
-                  <p style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.4, margin: "0 0 16px 0" }}>
+
+                  <p style={{
+                    fontSize: "0.78rem",
+                    color: "#555",
+                    lineHeight: 1.4,
+                    margin: "0 0 12px 0"
+                  }}>
                     {project.description}
                   </p>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #ddd", paddingTop: 10 }}>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {project.tech.slice(0, 3).map(t => (
-                        <span key={t} style={{ border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: "0.62rem", color: "#555", background: "#f5f5f5" }}>
+                        <span key={t} style={{ border: "1px solid #ddd", borderRadius: 4, padding: "1px 5px", fontSize: "0.58rem", color: "#666", background: "#f0f0f0" }}>
                           {t}
                         </span>
                       ))}
@@ -2610,12 +2705,12 @@ function ProjectsSection() {
                       <button
                         onClick={() => setSelectedProjectGroup(project)}
                         style={{
-                          background: "rgba(168,85,247,0.1)",
-                          border: "1px solid rgba(168,85,247,0.25)",
-                          borderRadius: 8,
-                          padding: "6px 12px",
+                          background: "rgba(168,85,247,0.08)",
+                          border: "1px solid rgba(168,85,247,0.2)",
+                          borderRadius: 6,
+                          padding: "4px 10px",
                           color: S.purple,
-                          fontSize: "0.7rem",
+                          fontSize: "0.68rem",
                           fontWeight: 700,
                           cursor: "pointer",
                           display: "flex",
@@ -2626,9 +2721,9 @@ function ProjectsSection() {
                         View Projects ({project.subProjects.length})
                       </button>
                     ) : (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><Github size={16} /></a>
-                        <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><ExternalLink size={16} /></a>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><Github size={14} /></a>
+                        <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><ExternalLink size={14} /></a>
                       </div>
                     )}
                   </div>
@@ -2637,7 +2732,7 @@ function ProjectsSection() {
             })}
           </div>
         ) : (
-          <div style={{ position: "relative", height: 800, background: "rgba(0,0,0,0.15)", borderRadius: 24, border: "2px solid rgba(139, 126, 116, 0.15)", overflow: "hidden" }}>
+          <div style={{ position: "relative", height: boardHeight, background: "rgba(0,0,0,0.15)", borderRadius: 24, border: "2px solid rgba(139, 126, 116, 0.15)", overflow: "hidden" }}>
             <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, width: "100%", height: "100%" }}>
               {threads.map((thread, idx) => {
                 const p1 = cardPositions[thread.from];
