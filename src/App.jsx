@@ -17,6 +17,22 @@ import {
 import { mongoLoad, mongoSave, sendEmail, mongoConfigured, ADMIN_EMAIL } from "./services.js";
 import { Analytics } from "@vercel/analytics/react";
 
+const HackerRank = ({ size = 24, ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M6 5 H4 V19 H6 M18 5 H20 V19 H18 M8 12 H16 M8 7.5 V16.5 M16 7.5 V16.5" />
+  </svg>
+);
+
 // ============================================================
 // GOOGLE FONT + GLOBAL STYLES
 // ============================================================
@@ -198,7 +214,7 @@ const personalInfo = {
 const socialLinks = [
   { name: "GitHub", href: "https://github.com/NavaneethRaj05", icon: Github },
   { name: "LinkedIn", href: "https://www.linkedin.com/in/navaneeth-raj05?utm_source=share_via&utm_content=profile&utm_medium=member_android", icon: Linkedin },
-  { name: "Twitter", href: "https://twitter.com/navaneethraj", icon: Twitter },
+  { name: "HackerRank", href: "#", icon: HackerRank },
   { name: "Email", href: "mailto:navaneethraj05@gmail.com", icon: Mail },
 ];
 
@@ -206,10 +222,43 @@ const education = [
   {
     degree: "B.E. in Computer Science Engineering",
     college: "Navkis College of Engineering",
-    duration: "2022 – 2026",
-    focus: ["AI", "MERN Stack", "Full Stack Systems", "UI/UX"],
+    yearOfPassing: "2027",
+    focus: ["MERN", "GENAI", "AUTOMATION", "CLOUD"],
+    type: "college"
   },
+  {
+    degree: "Pre-University Course (PUC)",
+    college: "Navkis PU College, Hassan",
+    yearOfPassing: "2023",
+    focus: [],
+    type: "pu"
+  },
+  {
+    degree: "Secondary School Leaving Certificate(SSLC)",
+    college: "United High School,Hassan",
+    yearOfPassing: "2021",
+    focus: [],
+    type: "school"
+  },
+  {
+    degree: "CCBP 4.0 Certification",
+    college: "Nxtwave",
+    duration: "",
+    focus: ["MERN Stack"],
+    type: "institution"
+  }
 ];
+
+const getEduType = (edu) => {
+  if (edu.type) return edu.type;
+  const col = (edu.college || "").toLowerCase();
+  const deg = (edu.degree || "").toLowerCase();
+  if (col.includes("school") || deg.includes("school") || deg.includes("sslc")) return "school";
+  if (col.includes("nxtwave") || col.includes("company") || deg.includes("certification") || deg.includes("ccbp") || deg.includes("course")) return "institution";
+  if (col.includes("pu") || col.includes("pre-university") || deg.includes("pu") || deg.includes("puc")) return "pu";
+  return "college";
+};
+
 
 const skills = {
   "Frontend":  [{ name: "React" }, { name: "Next.js" }, { name: "Tailwind CSS" }, { name: "Framer Motion" }, { name: "TypeScript" }, { name: "UI/UX Design" }],
@@ -220,22 +269,83 @@ const skills = {
 };
 
 const projects = [
-  { id: 1, priority: 1, title: "AI Codebase Explainer", description: "An intelligent tool that scans repository structures and provides plain-English explanations of complex logic using Gemini integration.", tech: ["React", "Node.js", "Google AI", "Tailwind"], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", icon: Terminal, github: "#", live: "#", featured: true },
-  { id: 2, priority: 2, title: "Smart Complaint Resolution", description: "Autonomous support agent that categorizes, prioritizes, and drafts responses for customer inquiries using sentiment analysis.", tech: ["MERN Stack", "OpenAI", "Redis", "Docker"], image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1000", icon: Cpu, github: "#", live: "#", featured: true },
-  { id: 3, priority: 3, title: "AI Personal Assistant Chat", description: "Full-featured chat application with memory storage, file analysis capabilities, and real-time streaming responses.", tech: ["Next.js", "MongoDB", "LangChain", "Socket.io"], image: "https://images.unsplash.com/photo-1587560699334-cc4ff634909a?auto=format&fit=crop&q=80&w=1000", icon: MessageSquare, github: "#", live: "#", featured: false },
-  { id: 4, priority: 4, title: "Event Management Platform", description: "End-to-end event hosting system with automated scheduling, ticket generation, and attendee engagement analytics.", tech: ["React", "Firebase", "Node.js", "Stripe"], image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=1000", icon: Calendar, github: "#", live: "#", featured: false },
+  {
+    id: 1,
+    priority: 1,
+    title: "Team Vortex Website",
+    description: "Official AI-powered club management platform for Team Vortex that streamlines event registrations, auditions, payments, team management, and analytics. Integrated LLM-driven features including an intelligent chatbot, AI event generation, audition screening, personalized communications, and automated insights using React, Node.js, MongoDB, and AI.",
+    tech: ["React", "Node.js", "MongoDB", "AI"],
+    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000",
+    github: "https://github.com/NavaneethRaj05/TeamVortex_website",
+    live: "https://teamvortexnce.com/",
+    featured: true,
+    subProjects: []
+  },
+  {
+    id: 2,
+    priority: 2,
+    title: "KrishiMind",
+    description: "An AI-powered agricultural search engine that provides accurate farming insights through both online and offline knowledge retrieval. Designed to deliver Perplexity-like responses tailored for farmers and agriculture enthusiasts.",
+    tech: ["React", "Node.js", "RAG", "LLM"],
+    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1000",
+    github: "https://github.com/NavaneethRaj05/KrishiMind",
+    live: "#",
+    featured: true,
+    subProjects: []
+  },
+  {
+    id: 3,
+    priority: 3,
+    title: "Hostel Management System (Mini Project)",
+    description: "Built a smart hostel management platform using MERN Stack, RAG, and LLMs. Features include AI handbook search, complaint priority detection, attendance analytics, outpass risk assessment, billing insights, and automated administrative reporting.",
+    tech: ["MERN Stack", "RAG", "LLMs"],
+    image: "https://images.unsplash.com/photo-1587560699334-cc4ff634909a?auto=format&fit=crop&q=80&w=1000",
+    github: "https://github.com/NavaneethRaj05/Hostel-management-system",
+    live: "https://hostel-management-system-navaneeth.vercel.app/",
+    featured: false,
+    subProjects: []
+  },
+  {
+    id: 4,
+    priority: 4,
+    title: "Hackathon Project – AI Solution, Web Application",
+    description: "Developed an AI-driven solution during a hackathon, focusing on real-world problem solving, rapid prototyping, and collaborative development under strict time constraints.",
+    tech: ["React", "Firebase", "Node.js", "Stripe"],
+    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=1000",
+    github: "#",
+    live: "#",
+    featured: false,
+    subProjects: [
+      {
+        title: "EcoRoute - Smart Emission Tracker (Hackathon 2025)",
+        description: "EcoRoute is a web-based routing engine that calculates travel routes based on fuel efficiency and carbon emission, winning 1st place in GreenTech Hackathon.",
+        image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000",
+        tech: ["React", "Leaflet Maps", "Node.js", "Python"],
+        github: "",
+        live: ""
+      },
+      {
+        title: "MedAI - Emergency Care Assistant (Hackathon 2024)",
+        description: "Real-time AI voice assistant for emergency response teams that transcribes calls, extracts symptoms, and suggests critical first-aid instructions instantly.",
+        image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1000",
+        tech: ["React", "Express", "OpenAI Whispers", "Socket.io"],
+        github: "",
+        live: ""
+      }
+    ]
+  }
 ];
 
 const journey = [
-  { role: "Exploring AI Agents & RAG", company: "Current Learning", duration: "2026", description: "Deep diving into autonomous agentic workflows and advanced retrieval systems for intelligent information processing.", icon: Cpu },
-  { role: "Hackathon Winner - AI for Good", company: "Global AI Summit", duration: "2025", description: "Developed an autonomous disaster relief coordination bot using satellite imagery and AI, winning first place among 50+ entries.", icon: Trophy },
-  { role: "Open Source Contributor", company: "GitHub / Various Labs", duration: "2024 - 2025", description: "Contributed to several AI-focused repositories, refining prompt engineering techniques and full-stack integration patterns.", icon: Code },
-  { role: "Started MERN Journey", company: "Self-Directed Foundation", duration: "2024", description: "Mastered the core concepts of the MERN stack through intensive building of 10+ experimental projects.", icon: BookOpen },
+  { role: "Exploring AI Agents & RAG", company: "Current Learning", duration: "2026", description: "Deep diving into autonomous agentic workflows and advanced retrieval systems for intelligent information processing.", icon: Cpu, priority: 1 },
+  { role: "Hackathon Winner - AI for Good", company: "Global AI Summit", duration: "2025", description: "Developed an autonomous disaster relief coordination bot using satellite imagery and AI, winning first place among 50+ entries.", icon: Trophy, priority: 2 },
+  { role: "Open Source Contributor", company: "GitHub / Various Labs", duration: "2024 - 2025", description: "Contributed to several AI-focused repositories, refining prompt engineering techniques and full-stack integration patterns.", icon: Code, priority: 3 },
+  { role: "Started MERN Journey", company: "Self-Directed Foundation", duration: "2024", description: "Mastered the core concepts of the MERN stack through intensive building of 10+ experimental projects.", icon: BookOpen, priority: 4 },
 ];
 
 const certifications = [
-  { priority: 1, title: "Google Cloud Certified - Professional Cloud Architect", issuer: "Google Cloud", year: "2023", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
-  { priority: 2, title: "Deep Learning Specialization", issuer: "DeepLearning.AI", year: "2022", image: "https://images.unsplash.com/photo-1509228468518-180dd482195e?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" },
+  { priority: 1, title: "NxtWave Certification", issuer: "NxtWave", year: "2024", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#", certificates: [] },
+  { priority: 2, title: "NPTEL Certification", issuer: "NPTEL", year: "2025", image: "https://images.unsplash.com/photo-1509228468518-180dd482195e?auto=format&fit=crop&q=80&w=1000", credentialLink: "#", certificates: [] },
 ];
 
 const whatIBuild = [
@@ -1047,30 +1157,74 @@ function AdminPortal() {
             {activeSection === "education" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Education</h3>
-                {data.education.map((edu, i) => card(
-                  <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <p style={{ color: "#aaa", fontWeight: 600 }}>Entry #{i + 1}</p>
-                      <button
-                        onClick={() => {
-                          const n = data.education.filter((_, idx) => idx !== i);
-                          updateData("education", n);
-                        }}
-                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        title="Delete Education Entry"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    {field("Degree", edu.degree, v => { const n = [...data.education]; n[i] = { ...n[i], degree: v }; updateData("education", n); })}
-                    {field("College", edu.college, v => { const n = [...data.education]; n[i] = { ...n[i], college: v }; updateData("education", n); })}
-                    {field("Duration", edu.duration, v => { const n = [...data.education]; n[i] = { ...n[i], duration: v }; updateData("education", n); })}
-                    <CommaSeparatedField labelText="Focus Areas (comma separated)" valueArray={edu.focus} onChange={v => { const n = [...data.education]; n[i] = { ...n[i], focus: v }; updateData("education", n); }} purpleColor={S.purple} />
-                  </div>, i
-                ))}
+                {data.education.map((edu, i) => {
+                  const type = edu.type || getEduType(edu);
+                  const collegeLabel = type === "school" ? "School" : type === "institution" ? "Institution" : type === "pu" ? "PU College" : "College";
+                  const showFocus = type === "college" || type === "institution";
+                  return card(
+                    <div key={i}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <p style={{ color: "#aaa", fontWeight: 600 }}>Entry #{i + 1}</p>
+                        <button
+                          onClick={() => {
+                            const n = data.education.filter((_, idx) => idx !== i);
+                            updateData("education", n);
+                          }}
+                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="Delete Education Entry"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div style={{ marginBottom: 16 }}>
+                        {label("Type")}
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {["college", "school", "pu", "institution"].map(t => {
+                            const active = type === t;
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => {
+                                  const n = [...data.education];
+                                  n[i] = { ...n[i], type: t };
+                                  updateData("education", n);
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: 8,
+                                  border: `1px solid ${active ? S.purple : "#333"}`,
+                                  background: active ? "rgba(168, 85, 247, 0.2)" : "#1a1a1a",
+                                  color: active ? "white" : "#888",
+                                  cursor: "pointer",
+                                  fontSize: "0.8rem",
+                                  fontWeight: 500,
+                                  textTransform: "capitalize",
+                                  fontFamily: "'Kanit', sans-serif"
+                                }}
+                              >
+                                {t === "pu" ? "PU College" : t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {field(type === "institution" ? "Certification" : "Degree", edu.degree, v => { const n = [...data.education]; n[i] = { ...n[i], degree: v }; updateData("education", n); })}
+                      {field(collegeLabel, edu.college, v => { const n = [...data.education]; n[i] = { ...n[i], college: v }; updateData("education", n); })}
+                      {type === "institution" ? (
+                        field("Duration", edu.duration || "", v => { const n = [...data.education]; n[i] = { ...n[i], duration: v }; updateData("education", n); })
+                      ) : (
+                        field("Year of Passing", edu.yearOfPassing || "", v => { const n = [...data.education]; n[i] = { ...n[i], yearOfPassing: v }; updateData("education", n); })
+                      )}
+                      {showFocus && (
+                        <CommaSeparatedField labelText="Focus Areas (comma separated)" valueArray={edu.focus} onChange={v => { const n = [...data.education]; n[i] = { ...n[i], focus: v }; updateData("education", n); }} purpleColor={S.purple} />
+                      )}
+                    </div>, i
+                  );
+                })}
                 <button
                   onClick={() => {
-                    const n = [...data.education, { degree: "New Degree", college: "New College", duration: "2026 – 2028", focus: [] }];
+                    const n = [...data.education, { degree: "New Degree", college: "New College", yearOfPassing: "2026", focus: [], type: "college" }];
                     updateData("education", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1293,12 +1447,149 @@ function AdminPortal() {
                     <CommaSeparatedField labelText="Technologies (comma separated)" valueArray={proj.tech || []} onChange={v => { const n = [...data.projects]; n[i] = { ...n[i], tech: v }; updateData("projects", n); }} purpleColor={S.purple} />
                     {field("GitHub URL", proj.github, v => { const n = [...data.projects]; n[i] = { ...n[i], github: v }; updateData("projects", n); })}
                     {field("Live URL", proj.live, v => { const n = [...data.projects]; n[i] = { ...n[i], live: v }; updateData("projects", n); })}
+                    
+                    {/* Sub-Projects Section */}
+                    <div style={{ marginTop: 20, padding: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 16 }}>
+                      <p style={{ color: S.purple, fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Sub-Projects / Project Gallery</p>
+                      
+                      {((proj.subProjects || [])).map((subProj, subIndex) => (
+                        <div key={subIndex} style={{ marginBottom: 16, borderBottom: subIndex < (proj.subProjects || []).length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none", paddingBottom: subIndex < (proj.subProjects || []).length - 1 ? 16 : 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <p style={{ color: "#888", fontSize: "0.8rem", fontWeight: 600 }}>Project #{subIndex + 1}</p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const n = [...data.projects];
+                                n[i] = {
+                                  ...n[i],
+                                  subProjects: (n[i].subProjects || []).filter((_, idx) => idx !== subIndex)
+                                };
+                                updateData("projects", n);
+                              }}
+                              style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                              title="Delete Sub-Project"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          {field(`Project Title #${subIndex + 1}`, subProj.title, v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], title: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          })}
+                          
+                          {field(`Project Description #${subIndex + 1}`, subProj.description, v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], description: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          }, "text", 2)}
+                          
+                          {/* Image upload / input for sub project */}
+                          <div style={{ marginBottom: 8 }}>
+                            {label(`Image for Project #${subIndex + 1}`)}
+                            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                              {subProj.image && (
+                                <img src={subProj.image} alt="Preview" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", border: "1px solid #333" }} />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      const base64String = reader.result;
+                                      const n = [...data.projects];
+                                      const updatedSubs = [...(n[i].subProjects || [])];
+                                      updatedSubs[subIndex] = { ...updatedSubs[subIndex], image: base64String };
+                                      n[i] = { ...n[i], subProjects: updatedSubs };
+                                      updateData("projects", n);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                                style={{ display: "none" }}
+                                id={`sub-proj-img-file-${i}-${subIndex}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById(`sub-proj-img-file-${i}-${subIndex}`).click()}
+                                style={{
+                                  background: S.purple,
+                                  border: "none",
+                                  borderRadius: 10,
+                                  padding: "8px 14px",
+                                  color: "white",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  fontSize: "0.75rem",
+                                  fontFamily: "'Kanit', sans-serif"
+                                }}
+                              >
+                                Upload File
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {field(`Image URL #${subIndex + 1}`, subProj.image, v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], image: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          })}
+                          
+                          <CommaSeparatedField labelText={`Technologies #${subIndex + 1} (comma separated)`} valueArray={subProj.tech || []} onChange={v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], tech: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          }} purpleColor={S.purple} />
+                          
+                          {field(`GitHub URL #${subIndex + 1}`, subProj.github, v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], github: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          })}
+                          
+                          {field(`Live URL #${subIndex + 1}`, subProj.live, v => {
+                            const n = [...data.projects];
+                            const updatedSubs = [...(n[i].subProjects || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], live: v };
+                            n[i] = { ...n[i], subProjects: updatedSubs };
+                            updateData("projects", n);
+                          })}
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = [...data.projects];
+                          const updatedSubs = [...(n[i].subProjects || [])];
+                          updatedSubs.push({ title: "New Sub-Project", description: "Sub-Project Description", image: "", tech: [], github: "#", live: "#" });
+                          n[i] = { ...n[i], subProjects: updatedSubs };
+                          updateData("projects", n);
+                        }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", background: "rgba(168, 85, 247, 0.05)", border: "1px dashed rgba(168, 85, 247, 0.3)", borderRadius: 12, padding: "10px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                      >
+                        <Plus size={14} /> Add Sub-Project
+                      </button>
+                    </div>
                   </div>, proj.id || i
                 ))}
                 <button
                   onClick={() => {
                     const nextPriority = data.projects.length + 1;
-                    const n = [...data.projects, { id: Date.now(), priority: nextPriority, title: "New Project", description: "Project Description", tech: [], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", github: "#", live: "#", icon: Briefcase }];
+                    const n = [...data.projects, { id: Date.now(), priority: nextPriority, title: "New Project", description: "Project Description", tech: [], image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000", github: "#", live: "#", icon: Briefcase, subProjects: [] }];
                     updateData("projects", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1314,18 +1605,72 @@ function AdminPortal() {
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Journey</h3>
                 {data.journey.map((item, i) => card(
                   <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <p style={{ color: "#aaa", fontWeight: 600 }}>{item.role || "Journey Entry"}</p>
+                    {/* Title row with priority badge */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "white", fontSize: "0.72rem", fontWeight: 900, flexShrink: 0, boxShadow: "0 2px 8px rgba(168,85,247,0.4)" }}>
+                        {item.priority ?? i + 1}
+                      </div>
+                      <p style={{ color: "#aaa", fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.role || "Journey Entry"}</p>
+                    </div>
+                    {/* Action buttons row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <button
+                        onClick={() => {
+                          if (i === 0) return;
+                          const n = [...data.journey];
+                          [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
+                          updateData("journey", n);
+                        }}
+                        disabled={i === 0}
+                        style={{ background: i === 0 ? "rgba(255,255,255,0.03)" : "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8, padding: "7px 10px", color: i === 0 ? "#444" : S.purple, cursor: i === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Up"
+                      >
+                        <ArrowUp size={14} /> Up
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (i === data.journey.length - 1) return;
+                          const n = [...data.journey];
+                          [n[i], n[i + 1]] = [n[i + 1], n[i]];
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
+                          updateData("journey", n);
+                        }}
+                        disabled={i === data.journey.length - 1}
+                        style={{ background: i === data.journey.length - 1 ? "rgba(255,255,255,0.03)" : "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8, padding: "7px 10px", color: i === data.journey.length - 1 ? "#444" : S.purple, cursor: i === data.journey.length - 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600 }}
+                        title="Move Down"
+                      >
+                        <ArrowDown size={14} /> Down
+                      </button>
+                      <div style={{ flex: 1 }} />
                       <button
                         onClick={() => {
                           const n = data.journey.filter((_, idx) => idx !== i);
+                          n.forEach((p, idx) => { n[idx] = { ...p, priority: idx + 1 }; });
                           updateData("journey", n);
                         }}
-                        style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, padding: "7px 10px", fontSize: "0.7rem", fontFamily: "'Kanit', sans-serif", fontWeight: 600, transition: "all 0.2s" }}
                         title="Delete Journey Entry"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} /> Delete
                       </button>
+                    </div>
+                    {/* Priority number field */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: "block", color: "#888", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Priority (1 = shown first)</label>
+                      <input
+                        type="number" min="1"
+                        value={item.priority ?? i + 1}
+                        onChange={e => {
+                          const val = parseInt(e.target.value) || 1;
+                          const n = [...data.journey];
+                          n[i] = { ...n[i], priority: val };
+                          updateData("journey", n);
+                        }}
+                        style={{ width: "120px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 10, padding: "10px 14px", color: S.purple, outline: "none", fontFamily: "'Kanit', sans-serif", fontSize: "1rem", fontWeight: 700 }}
+                        onFocus={e => e.target.style.borderColor = S.purple}
+                        onBlur={e => e.target.style.borderColor = "#333"}
+                      />
                     </div>
                     {field("Role", item.role, v => { const n = [...data.journey]; n[i] = { ...n[i], role: v }; updateData("journey", n); })}
                     {field("Company", item.company, v => { const n = [...data.journey]; n[i] = { ...n[i], company: v }; updateData("journey", n); })}
@@ -1335,7 +1680,8 @@ function AdminPortal() {
                 ))}
                 <button
                   onClick={() => {
-                    const n = [...data.journey, { role: "New Role", company: "New Company", duration: "2026", description: "Milestone description", icon: Cpu }];
+                    const nextPriority = data.journey.length + 1;
+                    const n = [...data.journey, { role: "New Role", company: "New Company", duration: "2026", description: "Milestone description", icon: Cpu, priority: nextPriority }];
                     updateData("journey", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1475,12 +1821,125 @@ function AdminPortal() {
                     </div>
                     {field("Image URL", cert.image, v => { const n = [...data.certifications]; n[i] = { ...n[i], image: v }; updateData("certifications", n); })}
                     {field("Credential Link", cert.credentialLink, v => { const n = [...data.certifications]; n[i] = { ...n[i], credentialLink: v }; updateData("certifications", n); })}
+                    
+                    {/* Sub-Certificates Section */}
+                    <div style={{ marginTop: 20, padding: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 16 }}>
+                      <p style={{ color: S.cyan, fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Sub-Certificates / Certificate Gallery</p>
+                      
+                      {((cert.certificates || [])).map((subCert, subIndex) => (
+                        <div key={subIndex} style={{ marginBottom: 16, borderBottom: subIndex < (cert.certificates || []).length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none", paddingBottom: subIndex < (cert.certificates || []).length - 1 ? 16 : 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <p style={{ color: "#888", fontSize: "0.8rem", fontWeight: 600 }}>Certificate #{subIndex + 1}</p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const n = [...data.certifications];
+                                n[i] = {
+                                  ...n[i],
+                                  certificates: (n[i].certificates || []).filter((_, idx) => idx !== subIndex)
+                                };
+                                updateData("certifications", n);
+                              }}
+                              style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                              title="Delete Sub-Certificate"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          {field(`Cert Title #${subIndex + 1}`, subCert.title, v => {
+                            const n = [...data.certifications];
+                            const updatedSubs = [...(n[i].certificates || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], title: v };
+                            n[i] = { ...n[i], certificates: updatedSubs };
+                            updateData("certifications", n);
+                          })}
+                          
+                          {/* Image upload / input for sub cert */}
+                          <div style={{ marginBottom: 8 }}>
+                            {label(`Image for Cert #${subIndex + 1}`)}
+                            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                              {subCert.image && (
+                                <img src={subCert.image} alt="Preview" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "contain", border: "1px solid #333", background: "rgba(255,255,255,0.05)" }} />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      const base64String = reader.result;
+                                      const n = [...data.certifications];
+                                      const updatedSubs = [...(n[i].certificates || [])];
+                                      updatedSubs[subIndex] = { ...updatedSubs[subIndex], image: base64String };
+                                      n[i] = { ...n[i], certificates: updatedSubs };
+                                      updateData("certifications", n);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                                style={{ display: "none" }}
+                                id={`sub-cert-img-file-${i}-${subIndex}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById(`sub-cert-img-file-${i}-${subIndex}`).click()}
+                                style={{
+                                  background: S.purple,
+                                  border: "none",
+                                  borderRadius: 10,
+                                  padding: "8px 14px",
+                                  color: "white",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  fontSize: "0.75rem",
+                                  fontFamily: "'Kanit', sans-serif"
+                                }}
+                              >
+                                Upload File
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {field(`Image URL #${subIndex + 1}`, subCert.image, v => {
+                            const n = [...data.certifications];
+                            const updatedSubs = [...(n[i].certificates || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], image: v };
+                            n[i] = { ...n[i], certificates: updatedSubs };
+                            updateData("certifications", n);
+                          })}
+                          
+                          {field(`Credential Link #${subIndex + 1}`, subCert.credentialLink, v => {
+                            const n = [...data.certifications];
+                            const updatedSubs = [...(n[i].certificates || [])];
+                            updatedSubs[subIndex] = { ...updatedSubs[subIndex], credentialLink: v };
+                            n[i] = { ...n[i], certificates: updatedSubs };
+                            updateData("certifications", n);
+                          })}
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const n = [...data.certifications];
+                          const updatedSubs = [...(n[i].certificates || [])];
+                          updatedSubs.push({ title: "New Certificate", image: "", credentialLink: "#" });
+                          n[i] = { ...n[i], certificates: updatedSubs };
+                          updateData("certifications", n);
+                        }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", background: "rgba(168, 85, 247, 0.05)", border: "1px dashed rgba(168, 85, 247, 0.3)", borderRadius: 12, padding: "10px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.8rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
+                      >
+                        <Plus size={14} /> Add Sub-Certificate
+                      </button>
+                    </div>
                   </div>, i
                 ))}
                 <button
                   onClick={() => {
                     const nextPriority = data.certifications.length + 1;
-                    const n = [...data.certifications, { priority: nextPriority, title: "New Certification", issuer: "Issuer", year: "2026", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#" }];
+                    const n = [...data.certifications, { priority: nextPriority, title: "New Certification", issuer: "Issuer", year: "2026", image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=1000", credentialLink: "#", certificates: [] }];
                     updateData("certifications", n);
                   }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", borderRadius: 16, padding: "16px", color: S.purple, cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", fontFamily: "'Kanit', sans-serif", transition: "all 0.2s", marginTop: 8 }}
@@ -1985,58 +2444,66 @@ function EducationSection() {
         <FadeIn delay={0} y={40} style={{ textAlign: "center", marginBottom: "clamp(48px,6vw,96px)" }}>
           <SectionHeading>Education</SectionHeading>
         </FadeIn>
-        {data.education.map((edu, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: i % 2 === 0 ? -70 : 70 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.7, delay: i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <motion.div whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(34,211,238,0.08)" }} transition={{ duration: 0.3 }}>
-              <GlassCard style={{ marginBottom: 24, position: "relative", overflow: "hidden" }} className="glow-card">
-                <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: 200, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                      <motion.div whileHover={{ rotate: 15, scale: 1.1 }} className="glass" style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: S.cyan, flexShrink: 0, cursor: "default" }}>
-                        <GraduationCap size={18} />
-                      </motion.div>
-                      <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,2vw,1.7rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2 }}>{edu.degree}</h3>
+        {data.education.map((edu, i) => {
+          const type = edu.type || getEduType(edu);
+          const showFocus = type === "college" || type === "institution";
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: i % 2 === 0 ? -70 : 70 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.7, delay: i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <motion.div whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(34,211,238,0.08)" }} transition={{ duration: 0.3 }}>
+                <GlassCard style={{ marginBottom: 24, position: "relative", overflow: "hidden" }} className="glow-card">
+                  <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: 200, background: "radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: (showFocus && edu.focus && edu.focus.length > 0) ? 28 : 0 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                        <motion.div whileHover={{ rotate: 15, scale: 1.1 }} className="glass" style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: S.cyan, flexShrink: 0, cursor: "default" }}>
+                          {type === "school" ? <BookOpen size={18} /> : <GraduationCap size={18} />}
+                        </motion.div>
+                        <h3 style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.1rem,2vw,1.7rem)", fontFamily: "'Kanit', sans-serif", lineHeight: 1.2 }}>{edu.degree}</h3>
+                      </div>
+                      <p style={{ color: "#888", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.85rem" }}>{edu.college}</p>
                     </div>
-                    <p style={{ color: "#888", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.85rem" }}>{edu.college}</p>
-                  </div>
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 + 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-                    className="glass"
-                    style={{ padding: "6px 16px", borderRadius: 9999, color: "#888", fontSize: "0.8rem", fontFamily: "monospace", whiteSpace: "nowrap" }}
-                  >{edu.duration}</motion.span>
-                </div>
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 20 }}>
-                  <p style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                    <Sparkles size={12} /> Focused On
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {(edu.focus || []).map((item, fi) => (
-                      <motion.span key={item}
+                    {((type === "institution" ? edu.duration : edu.yearOfPassing) || null) && (
+                      <motion.span
                         initial={{ opacity: 0, scale: 0.7 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        transition={{ delay: i * 0.1 + 0.2 + fi * 0.06, ease: [0.34, 1.56, 0.64, 1] }}
-                        whileHover={{ scale: 1.08, y: -3 }}
+                        transition={{ delay: i * 0.1 + 0.3, ease: [0.34, 1.56, 0.64, 1] }}
                         className="glass"
-                        style={{ padding: "6px 14px", borderRadius: 9999, fontSize: "0.8rem", color: "#aaa", cursor: "default" }}
-                      >{item}</motion.span>
-                    ))}
+                        style={{ padding: "6px 16px", borderRadius: 9999, color: "#888", fontSize: "0.8rem", fontFamily: "monospace", whiteSpace: "nowrap" }}
+                      >{type === "institution" ? edu.duration : edu.yearOfPassing}</motion.span>
+                    )}
                   </div>
-                </div>
-              </GlassCard>
+                  {showFocus && edu.focus && edu.focus.length > 0 && (
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 20 }}>
+                      <p style={{ color: S.cyan, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Sparkles size={12} /> Focused On
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {(edu.focus || []).map((item, fi) => (
+                          <motion.span key={item}
+                            initial={{ opacity: 0, scale: 0.7 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1 + 0.2 + fi * 0.06, ease: [0.34, 1.56, 0.64, 1] }}
+                            whileHover={{ scale: 1.08, y: -3 }}
+                            className="glass"
+                            style={{ padding: "6px 14px", borderRadius: 9999, fontSize: "0.8rem", color: "#aaa", cursor: "default" }}
+                          >{item}</motion.span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </GlassCard>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -2048,6 +2515,7 @@ function EducationSection() {
 function ProjectsSection() {
   const { data } = useAdmin();
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedProjectGroup, setSelectedProjectGroup] = useState(null);
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     handleResize();
@@ -2067,8 +2535,8 @@ function ProjectsSection() {
   const [cardPositions, setCardPositions] = useState([
     { x: 40, y: 30, rot: -4 },
     { x: 480, y: 15, rot: 5 },
-    { x: 100, y: 330, rot: 6 },
-    { x: 540, y: 300, rot: -3 }
+    { x: 100, y: 310, rot: 6 },
+    { x: 540, y: 290, rot: -3 }
   ]);
 
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -2138,17 +2606,38 @@ function ProjectsSection() {
                         </span>
                       ))}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><Github size={16} /></a>
-                      <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><ExternalLink size={16} /></a>
-                    </div>
+                    {project.subProjects && project.subProjects.length > 0 ? (
+                      <button
+                        onClick={() => setSelectedProjectGroup(project)}
+                        style={{
+                          background: "rgba(168,85,247,0.1)",
+                          border: "1px solid rgba(168,85,247,0.25)",
+                          borderRadius: 8,
+                          padding: "6px 12px",
+                          color: S.purple,
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}
+                      >
+                        View Projects ({project.subProjects.length})
+                      </button>
+                    ) : (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><Github size={16} /></a>
+                        <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }}><ExternalLink size={16} /></a>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div style={{ position: "relative", height: 720, background: "rgba(0,0,0,0.15)", borderRadius: 24, border: "2px solid rgba(139, 126, 116, 0.15)", overflow: "hidden" }}>
+          <div style={{ position: "relative", height: 800, background: "rgba(0,0,0,0.15)", borderRadius: 24, border: "2px solid rgba(139, 126, 116, 0.15)", overflow: "hidden" }}>
             <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5, width: "100%", height: "100%" }}>
               {threads.map((thread, idx) => {
                 const p1 = cardPositions[thread.from];
@@ -2227,6 +2716,11 @@ function ProjectsSection() {
                   }}
                   onMouseEnter={() => setHoveredIndex(i)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  onTap={() => {
+                    if (project.subProjects && project.subProjects.length > 0) {
+                      setSelectedProjectGroup(project);
+                    }
+                  }}
                   style={{
                     position: "absolute",
                     left: pos.x,
@@ -2306,10 +2800,34 @@ function ProjectsSection() {
                         </span>
                       ))}
                     </div>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><Github size={14} /></a>
-                      <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><ExternalLink size={14} /></a>
-                    </div>
+                    {project.subProjects && project.subProjects.length > 0 ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProjectGroup(project);
+                        }}
+                        style={{
+                          background: "rgba(168,85,247,0.08)",
+                          border: "1px solid rgba(168,85,247,0.2)",
+                          borderRadius: 6,
+                          padding: "4px 10px",
+                          color: S.purple,
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}
+                      >
+                        View Projects ({project.subProjects.length})
+                      </button>
+                    ) : (
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><Github size={14} /></a>
+                        <a href={project.live} target="_blank" rel="noopener noreferrer" style={{ color: "#333" }} onMouseDown={e => e.stopPropagation()}><ExternalLink size={14} /></a>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -2317,6 +2835,157 @@ function ProjectsSection() {
           </div>
         )}
       </div>
+
+      {/* Project Gallery Modal */}
+      <AnimatePresence>
+        {selectedProjectGroup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 200,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "clamp(12px, 3vw, 24px)",
+              background: "rgba(0, 0, 0, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)"
+            }}
+            onClick={() => setSelectedProjectGroup(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={{
+                position: "relative",
+                background: "#0C0C0C",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 28,
+                width: "100%",
+                maxWidth: 900,
+                maxHeight: "85vh",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                padding: "clamp(24px, 4vw, 48px)",
+                color: "#D7E2EA",
+                boxShadow: "0 24px 60px rgba(0, 0, 0, 0.8)"
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProjectGroup(null)}
+                style={{
+                  position: "absolute",
+                  top: 20,
+                  right: 20,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "50%",
+                  width: 40,
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#D7E2EA",
+                  cursor: "pointer",
+                  zIndex: 10,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)"; e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; e.currentTarget.style.color = "#D7E2EA"; }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* Title & Header */}
+              <div style={{ marginBottom: 28, paddingRight: 40 }}>
+                <h3 style={{ fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 800, color: "white", marginBottom: 6, fontFamily: "'Kanit', sans-serif" }}>
+                  {selectedProjectGroup.title}
+                </h3>
+                <p style={{ color: "#888", fontSize: "0.9rem" }}>
+                  Hackathon Projects Gallery • {selectedProjectGroup.description}
+                </p>
+              </div>
+
+              {/* Sub-Projects Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 24 }}>
+                {(selectedProjectGroup.subProjects || []).map((p, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -4 }}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      borderRadius: 20,
+                      padding: 20,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12
+                    }}
+                  >
+                    <div style={{ aspectRatio: "16/9", width: "100%", borderRadius: 12, overflow: "hidden", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {p.image ? (
+                        <img src={p.image} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ color: "#444", fontSize: "0.8rem" }}>No Image Available</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}>
+                      <div>
+                        <h4 style={{ color: "white", fontWeight: 700, fontSize: "1.05rem", marginBottom: 6 }}>{p.title}</h4>
+                        <p style={{ color: "#aaa", fontSize: "0.82rem", lineHeight: 1.4, marginBottom: 12 }}>{p.description}</p>
+                        
+                        {/* Tech tags */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                          {(p.tech || []).map(t => (
+                            <span key={t} style={{ background: "rgba(168, 85, 247, 0.1)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: 6, padding: "2px 8px", fontSize: "0.65rem", color: S.purple }}>
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 12 }}>
+                        {p.github && p.github !== "#" && (
+                          <a
+                            href={p.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, color: S.cyan, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", transition: "color 0.2s" }}
+                            onMouseEnter={e => e.currentTarget.style.color = S.purple}
+                            onMouseLeave={e => e.currentTarget.style.color = S.cyan}
+                          >
+                            GitHub <Github size={12} />
+                          </a>
+                        )}
+                        {p.live && p.live !== "#" && (
+                          <a
+                            href={p.live}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, color: S.cyan, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", transition: "color 0.2s" }}
+                            onMouseEnter={e => e.currentTarget.style.color = S.purple}
+                            onMouseLeave={e => e.currentTarget.style.color = S.cyan}
+                          >
+                            Live Demo <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
@@ -2976,6 +3645,13 @@ function ConstellationCanvasMap({ skills }) {
 // ============================================================
 function JourneySection() {
   const { data } = useAdmin();
+  const sortedJourney = useMemo(() => {
+    return [...data.journey].sort((a, b) => {
+      const pa = a.priority ?? Infinity;
+      const pb = b.priority ?? Infinity;
+      return pa - pb;
+    });
+  }, [data.journey]);
   return (
     <section id="journey" style={{ background: S.dark, padding: "clamp(80px,10vw,160px) clamp(20px,4vw,60px)", position: "relative", overflow: "hidden" }}>
       <ParticlesBg count={8} />
@@ -2993,7 +3669,7 @@ function JourneySection() {
             transition={{ duration: 1.2, ease: "easeInOut" }}
             style={{ position: "absolute", left: -1, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, #a855f7, #22d3ee, transparent)", transformOrigin: "top" }}
           />
-          {data.journey.map((item, i) => {
+          {sortedJourney.map((item, i) => {
             const Icon = item.icon || Cpu;
             return (
               <motion.div
@@ -3595,6 +4271,7 @@ function WhatIBuildSection() {
 // ============================================================
 function CertificationsSection() {
   const { data } = useAdmin();
+  const [selectedCertGroup, setSelectedCertGroup] = useState(null);
 
   // Sort certifications by priority (lowest = first), items without priority go last
   const sortedCertifications = useMemo(() => {
@@ -3612,35 +4289,191 @@ function CertificationsSection() {
           <div style={{ width: 60, height: 4, background: "linear-gradient(90deg, #a855f7, #22d3ee)", borderRadius: 9999, margin: "16px auto 0" }} />
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: "clamp(16px,2vw,28px)" }}>
-          {sortedCertifications.map((cert, i) => (
-            <FadeIn key={i} delay={i * 0.1} y={30}>
-              <motion.div
-                whileHover={{ y: -6, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-                transition={{ duration: 0.3 }}
-                className="cert-card"
-                style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 28, padding: "clamp(20px,2vw,32px)", overflow: "hidden" }}
-              >
-                <div style={{ width: 90, height: 90, borderRadius: 18, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(0,0,0,0.06)", background: "rgba(0,0,0,0.03)" }}>
-                  <img src={cert.image} alt={cert.title} style={{ width: "100%", height: "100%", objectFit: "contain", transition: "transform 0.5s" }}
-                    onMouseEnter={e => e.target.style.transform = "scale(1.1)"}
-                    onMouseLeave={e => e.target.style.transform = "scale(1)"}
-                  />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{ color: "#0C0C0C", fontWeight: 700, fontSize: "clamp(0.9rem,1.5vw,1.2rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 6, lineHeight: 1.3 }}>{cert.title}</h3>
-                  <p style={{ color: "#888", fontSize: "0.82rem", marginBottom: 14 }}>{cert.issuer} • {cert.year}</p>
-                  <a href={cert.credentialLink} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: S.cyan, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = S.purple}
-                    onMouseLeave={e => e.currentTarget.style.color = S.cyan}
-                  >
-                    Verify Credential <ExternalLink size={12} />
-                  </a>
-                </div>
-              </motion.div>
-            </FadeIn>
-          ))}
+          {sortedCertifications.map((cert, i) => {
+            const hasSubCerts = cert.certificates && cert.certificates.length > 0;
+            return (
+              <FadeIn key={i} delay={i * 0.1} y={30}>
+                <motion.div
+                  onClick={() => {
+                    if (hasSubCerts) {
+                      setSelectedCertGroup(cert);
+                    } else if (cert.credentialLink && cert.credentialLink !== "#") {
+                      window.open(cert.credentialLink, "_blank");
+                    }
+                  }}
+                  whileHover={{ y: -6, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+                  transition={{ duration: 0.3 }}
+                  className="cert-card"
+                  style={{ background: "#f8f8f8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 28, padding: "clamp(20px,2vw,32px)", overflow: "hidden", cursor: "pointer" }}
+                >
+                  <div style={{ width: 90, height: 90, borderRadius: 18, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(0,0,0,0.06)", background: "rgba(0,0,0,0.03)" }}>
+                    <img src={cert.image} alt={cert.title} style={{ width: "100%", height: "100%", objectFit: "contain", transition: "transform 0.5s" }}
+                      onMouseEnter={e => e.target.style.transform = "scale(1.1)"}
+                      onMouseLeave={e => e.target.style.transform = "scale(1)"}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ color: "#0C0C0C", fontWeight: 700, fontSize: "clamp(0.9rem,1.5vw,1.2rem)", fontFamily: "'Kanit', sans-serif", marginBottom: 6, lineHeight: 1.3 }}>{cert.title}</h3>
+                    <p style={{ color: "#888", fontSize: "0.82rem", marginBottom: 14 }}>{cert.issuer} • {cert.year}</p>
+                    {hasSubCerts ? (
+                      <a href="#" onClick={e => { e.preventDefault(); e.stopPropagation(); setSelectedCertGroup(cert); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: S.cyan, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "color 0.2s" }}
+                        onMouseEnter={e => e.currentTarget.style.color = S.purple}
+                        onMouseLeave={e => e.currentTarget.style.color = S.cyan}
+                      >
+                        View Certificates ({cert.certificates.length}) <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <a href={cert.credentialLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: S.cyan, fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "color 0.2s" }}
+                        onMouseEnter={e => e.currentTarget.style.color = S.purple}
+                        onMouseLeave={e => e.currentTarget.style.color = S.cyan}
+                      >
+                        Verify Credential <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
+                </motion.div>
+              </FadeIn>
+            );
+          })}
         </div>
       </div>
+
+      {/* Modal Popup */}
+      <AnimatePresence>
+        {selectedCertGroup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 200,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "clamp(12px, 3vw, 24px)",
+              background: "rgba(0, 0, 0, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)"
+            }}
+            onClick={() => setSelectedCertGroup(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={{
+                position: "relative",
+                background: "#0C0C0C",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 28,
+                width: "100%",
+                maxWidth: 900,
+                maxHeight: "85vh",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                padding: "clamp(24px, 4vw, 48px)",
+                color: "#D7E2EA",
+                boxShadow: "0 24px 60px rgba(0, 0, 0, 0.8)"
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedCertGroup(null)}
+                style={{
+                  position: "absolute",
+                  top: 20,
+                  right: 20,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "50%",
+                  width: 40,
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#D7E2EA",
+                  cursor: "pointer",
+                  zIndex: 10,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)"; e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; e.currentTarget.style.color = "#D7E2EA"; }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* Title & Header */}
+              <div style={{ marginBottom: 28, paddingRight: 40 }}>
+                <h3 style={{ fontSize: "clamp(1.4rem, 2.5vw, 2rem)", fontWeight: 800, color: "white", marginBottom: 6, fontFamily: "'Kanit', sans-serif" }}>
+                  {selectedCertGroup.title}
+                </h3>
+                <p style={{ color: "#888", fontSize: "0.9rem" }}>
+                  Issued by {selectedCertGroup.issuer} • {selectedCertGroup.year}
+                </p>
+              </div>
+
+              {/* Certificates Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 24 }}>
+                {(selectedCertGroup.certificates || []).map((c, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -4 }}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      borderRadius: 20,
+                      padding: 16,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12
+                    }}
+                  >
+                    <div style={{ aspectRatio: "1.414", width: "100%", borderRadius: 12, overflow: "hidden", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {c.image ? (
+                        <img src={c.image} alt={c.title} style={{ width: "100%", height: "100%", objectFit: "contain", cursor: "zoom-in" }}
+                          onClick={() => window.open(c.image, "_blank")}
+                        />
+                      ) : (
+                        <span style={{ color: "#444", fontSize: "0.8rem" }}>No Image Available</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}>
+                      <h4 style={{ color: "white", fontWeight: 600, fontSize: "0.95rem", lineHeight: 1.4 }}>{c.title}</h4>
+                      {c.credentialLink && c.credentialLink !== "#" && (
+                        <a
+                          href={c.credentialLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            alignSelf: "flex-start",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            color: S.cyan,
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                            transition: "color 0.2s"
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.color = S.purple}
+                          onMouseLeave={e => e.currentTarget.style.color = S.cyan}
+                        >
+                          Verify Certificate <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
