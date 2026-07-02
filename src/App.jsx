@@ -364,6 +364,35 @@ const githubStats = {
   forks: "18"
 };
 
+// Helper to open PDF (supports both external links and Base64 URLs safely)
+export function openResume(resumeLink) {
+  if (!resumeLink || resumeLink === "#") return;
+  if (resumeLink.startsWith("data:application/pdf;base64,")) {
+    try {
+      const parts = resumeLink.split(',');
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      console.error("Failed to open Base64 PDF", e);
+      // Fallback: write to iframe
+      const newWin = window.open();
+      if (newWin) {
+        newWin.document.write(`<iframe src="${resumeLink}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`);
+      }
+    }
+  } else {
+    window.open(resumeLink, "_blank", "noopener,noreferrer");
+  }
+}
+
 // ============================================================
 // ADMIN CONTEXT
 // ============================================================
@@ -838,8 +867,8 @@ function Navbar() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
             {/* Resume pill button — matches reference image */}
             <a
-              href={data.personalInfo.resumeLink || "#"}
-              target="_blank" rel="noopener noreferrer"
+              href="#"
+              onClick={(e) => { e.preventDefault(); openResume(data.personalInfo.resumeLink); }}
               className="nav-desktop-btn"
               style={{
                 alignItems: "center", gap: 6,
@@ -901,8 +930,8 @@ function Navbar() {
 
             {/* Resume button inside mobile menu drawer */}
             <a
-              href={data.personalInfo.resumeLink || "#"}
-              target="_blank" rel="noopener noreferrer"
+              href="#"
+              onClick={(e) => { e.preventDefault(); openResume(data.personalInfo.resumeLink); }}
               className="nav-mobile-only"
               style={{
                 alignItems: "center", justifyContent: "center", gap: 6,
@@ -1139,9 +1168,104 @@ function AdminPortal() {
             {activeSection === "personal" && (
               <div>
                 <h3 style={{ color: "white", fontWeight: 700, marginBottom: 20, fontFamily: "'Kanit', sans-serif" }}>Personal Information</h3>
-                {["name","role","tagline","email","location","github","linkedin","resumeLink"].map(f =>
+                {["name","role","tagline","email","location","github","linkedin"].map(f =>
                   field(f, data.personalInfo[f] ?? "", v => updateData("personalInfo", { ...data.personalInfo, [f]: v }))
                 )}
+
+                {/* Resume Link & Upload File */}
+                <div style={{ marginBottom: 16 }}>
+                  {label("resumeLink")}
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                    {inp(data.personalInfo.resumeLink ?? "", v => updateData("personalInfo", { ...data.personalInfo, resumeLink: v }))}
+                  </div>
+                  
+                  {/* File Upload Button and Status */}
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 8 }}>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      id="resume-file-upload"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        // Limit size to 5MB
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert("File size exceeds 5MB limit. Please select a smaller PDF.");
+                          e.target.value = "";
+                          return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const base64 = event.target.result;
+                          updateData("personalInfo", { ...data.personalInfo, resumeLink: base64 });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <label
+                      htmlFor="resume-file-upload"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: S.purple,
+                        color: "white",
+                        padding: "8px 16px",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        fontFamily: "'Kanit', sans-serif",
+                        transition: "background 0.2s",
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
+                      onMouseLeave={(e) => e.currentTarget.style.filter = "none"}
+                    >
+                      <FileText size={16} /> Choose PDF from Device
+                    </label>
+
+                    {data.personalInfo.resumeLink && data.personalInfo.resumeLink.startsWith("data:application/pdf") ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: "#10b981", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle size={14} /> PDF Uploaded ({Math.round((data.personalInfo.resumeLink.length * 3) / 4 / 1024)} KB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateData("personalInfo", { ...data.personalInfo, resumeLink: "#" });
+                            const fileInput = document.getElementById("resume-file-upload");
+                            if (fileInput) fileInput.value = "";
+                          }}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#ef4444",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            fontWeight: 500,
+                            fontFamily: "'Kanit', sans-serif",
+                            textDecoration: "underline",
+                            padding: 0,
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    ) : data.personalInfo.resumeLink && data.personalInfo.resumeLink !== "#" ? (
+                      <span style={{ color: "#22d3ee", fontSize: "0.85rem" }}>
+                        ✓ External URL link
+                      </span>
+                    ) : (
+                      <span style={{ color: "#888", fontSize: "0.85rem" }}>
+                        No resume uploaded
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {field("Hero Description", data.personalInfo.heroDescription, v => updateData("personalInfo", { ...data.personalInfo, heroDescription: v }), "text", 4)}
               </div>
             )}
@@ -4656,7 +4780,7 @@ function ContactSection() {
         window.open(data.personalInfo.github, "_blank", "noopener,noreferrer");
         setLedText("GITHUB OPENED");
       } else if (prod.code === "D4") {
-        window.open(data.personalInfo.resumeLink || "#", "_blank", "noopener,noreferrer");
+        openResume(data.personalInfo.resumeLink);
         setLedText("RESUME OPENED");
       }
       
